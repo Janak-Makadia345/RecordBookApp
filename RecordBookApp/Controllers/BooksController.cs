@@ -21,8 +21,18 @@ namespace RecordBookApp.Controllers
         // GET: Books
         public async Task<IActionResult> Index()
         {
-            var applicationDbContext = _context.Books.Include(b => b.User);
-            return View(await applicationDbContext.ToListAsync());
+            var userId = HttpContext.Session.GetString("UserId");
+            if (userId == null)
+            {
+                // Handle case where user is not logged in
+                return RedirectToAction("SignIn", "Users");
+            }
+
+            int parsedUserId = int.Parse(userId);
+            var books = await _context.Books
+                                      .Where(b => b.UserId == parsedUserId)
+                                      .ToListAsync();
+            return View(books);
         }
 
         // GET: Books/Details/5
@@ -96,13 +106,22 @@ namespace RecordBookApp.Controllers
             {
                 return NotFound();
             }
-            ViewData["UserId"] = new SelectList(_context.Users, "UserId", "Email", book.UserId);
+
+            var currentUserId = HttpContext.Session.GetString("UserId");
+            if (book.UserId.ToString() != currentUserId)
+            {
+                return Forbid();
+            }
+
+            ViewData["UserId"] = new SelectList(new List<SelectListItem>
+            {
+                new SelectListItem { Value = book.UserId.ToString(), Text = _context.Users.Find(book.UserId).Email }
+            }, "Value", "Text");
+
             return View(book);
         }
 
         // POST: Books/Edit/5
-        // To protect from overposting attacks, enable the specific properties you want to bind to.
-        // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Edit(int id, [Bind("BookId,BookName,UserId")] Book book)
@@ -112,24 +131,37 @@ namespace RecordBookApp.Controllers
                 return NotFound();
             }
 
-            try
+            var currentUserId = HttpContext.Session.GetString("UserId");
+            if (book.UserId.ToString() != currentUserId)
             {
-                _context.Update(book);
-                await _context.SaveChangesAsync();
+                return Forbid();
             }
-            catch (DbUpdateConcurrencyException)
+
+                try
+                {
+                    _context.Update(book);
+                    await _context.SaveChangesAsync();
+                }
+                catch (DbUpdateConcurrencyException)
+                {
+                    if (!BookExists(book.BookId))
+                    {
+                        return NotFound();
+                    }
+                    else
+                    {
+                        throw;
+                    }
+                 }
+
+            ViewData["UserId"] = new SelectList(new List<SelectListItem>
             {
-                if (!BookExists(book.BookId))
-                {
-                    return NotFound();
-                }
-                else
-                {
-                    throw;
-                }
-            }
-            return RedirectToAction(nameof(Index));
+                new SelectListItem { Value = book.UserId.ToString(), Text = _context.Users.Find(book.UserId).Email }
+            }, "Value", "Text");
+
+            return View(book);
         }
+
 
         // GET: Books/Delete/5
         public async Task<IActionResult> Delete(int? id)

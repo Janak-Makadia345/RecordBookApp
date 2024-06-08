@@ -1,76 +1,102 @@
 @model IEnumerable<RecordBookApp.Models.Book>
 
 @{
-  ViewData["Title"] = "Index";
-  int counter = 1; // Counter for automatic numbering
+    ViewData["Title"] = "Index";
+    int counter = 1;
 }
 
-<div class="container mt-3">
-  <div class="d-flex justify-content-between align-items-center mb-3">
-    <h1 class="h1">Your Books</h1>
-    <a asp-action="Create" class="btn btn-primary">
-      <i class="fas fa-plus"></i> Create New Book
-    </a>
-  </div>
+<script>
+    function toggleRowExpansion(event) {
+        const clickedElement = event.target;
+        const hasAction = clickedElement.classList.contains('asp-action') || clickedElement.parentElement?.classList.contains('asp-action');
 
-  <table class="table table-striped table-bordered">
-    <thead>
-      <tr>
-        <th scope="col">No.</th>
-        <th scope="col">Book Name</th>
-        <th scope="col">Actions</th>
-      </tr>
-    </thead>
-    <tbody>
-      @foreach (var item in Model)
-      {
-        <tr>
-          <th scope="row">@counter</th>
-          <td>@Html.DisplayFor(modelItem => item.BookName)</td>
-          <td>
-            <div class="dropdown">
-              <button class="btn btn-sm btn-light dropdown-toggle" type="button" id="dropdownMenuButton" data-bs-toggle="dropdown" aria-expanded="false">
-                <i class="fas fa-ellipsis-h"></i>
-              </button>
-              <ul class="dropdown-menu" aria-labelledby="dropdownMenuButton">
-                <li><a class="dropdown-item" asp-action="Edit" asp-route-id="@item.BookId">Edit</a></li>
-                <li><a class="dropdown-item" asp-action="Delete" asp-route-id="@item.BookId">Delete</a></li>
-              </ul>
-            </div>
-          </td>
-        </tr>
-        counter++;
-      }
-    </tbody>
-  </table>
-</div>
-
+        if (hasAction) {
+            // Prevent default behavior if anchor tag with asp-action is clicked
+            event.preventDefault();
+        } else {
+            // Toggle row expansion otherwise
+            clickedElement.parentElement.classList.toggle('expanded');
+        }
+    }
+</script>
 
 <style>
-  /* Include Bootstrap and Font Awesome CSS here */
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" >
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" >
 
-  table {
-    width: 70%; /* Adjust table width as needed */
-    margin: 0 auto; /* Center the table horizontally */
-    border-collapse: collapse; /* Remove table borders */
-  }
+    table {
+        width: 70%; /* Adjust table width as needed */
+        margin: 0 auto; /* Center the table horizontally */
+        border-collapse: collapse; /* Remove table borders */
+    }
 
-  th, td {
-    padding: 10px; /* Add padding to cells */
-    border: 1px solid #ddd; /* Add thin border */
-  }
+    th, td {
+        padding: 10px; /* Add padding to cells */
+        border: 1px solid #ddd; /* Add thin border */
+    }
 
-  th {
-    text-align: left; /* Align table headers to the left */
-  }
+    th {
+        text-align: left; /* Align table headers to the left */
+    }
 
-  .btn-primary {
-    background-color: #007bff; /* Change button color if desired */
-    border-color: #007bff;
-  }
+    .btn-primary {
+        background-color: #007bff; /* Change button color if desired */
+        border-color: #007bff;
+    }
 
-  .mt-5 {  /* Add margin-top for spacing */
-    margin-top: 2rem;
-  }
+    .mt-5 {
+        margin-top: 2rem; /* Add margin-top for spacing */
+    }
+
+    /* Styles for row expansion animation */
+    .expandable-row {
+        transition: height 0.3s ease-in-out; /* Smooth transition */
+    }
+
+    .expanded {
+        height: auto; /* Expand row height */
+        border: 1px solid #ddd; /* Add border on expansion */
+    }
 </style>
+
+<div class="container mt-3">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h1 class="h1">Your Books</h1>
+        <a asp-action="Create" class="btn btn-primary">
+            <i class="fas fa-plus"></i> Create New Book
+        </a>
+    </div>
+
+    <table class="table table-striped table-bordered">
+        <thead>
+            <tr>
+                <th scope="col">No.</th>
+                <th scope="col">Book Name</th>
+                <th scope="col">Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var item in Model)
+            {
+                <a asp-action="Details" asp-route-id="@item.BookId" onclick="toggleRowExpansion(this.parentElement)">
+                <tr class="expandable-row">
+                    <th scope="row">@counter</th>
+                    <td><a asp-action="Details" asp-route-id="@item.BookId">@Html.DisplayFor(modelItem => item.BookName)</a></td>
+                    <td>
+                        <div class="dropdown">
+                            <button class="btn btn-sm btn-light dropdown-toggle" type="button" id="dropdownMenuButton" data-bs-toggle="dropdown" aria-expanded="false">
+                                <i class="fas fa-ellipsis-h"></i>
+                            </button>
+                            <ul class="dropdown-menu" aria-labelledby="dropdownMenuButton">
+                                <li><a class="dropdown-item" asp-action="Edit" asp-route-id="@item.BookId">Edit</a></li>
+                                <li><a class="dropdown-item" asp-action="Delete" asp-route-id="@item.BookId">Delete</a></li>
+                            </ul>
+
+                        </div>
+                    </td>
+                </tr>
+                </a>
+                counter++;
+            }
+        </tbody>
+    </table>
+</div>
