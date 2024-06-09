@@ -1,4 +1,4 @@
-@model RecordBookApp.Models.Book
+@model RecordBookApp.Models.BookView
 
 @{
     ViewData["Title"] = "Edit";
@@ -14,17 +14,10 @@
                 <div class="card-body">
                     <form asp-action="Edit">
                         <div asp-validation-summary="ModelOnly" class="text-danger"></div>
-                        <input type="hidden" asp-for="BookId" />
                         <div class="mb-3">
                             <label asp-for="BookName" class="form-label">Book Name</label>
                             <input asp-for="BookName" class="form-control" />
                             <span asp-validation-for="BookName" class="invalid-input"></span>
-                        </div>
-
-                        <div class="mb-3">
-                            <label asp-for="UserId" class="form-label">User ID</label>
-                            <select asp-for="UserId" class="form-control" asp-items="ViewBag.UserId" disabled="disabled"></select>
-                            <span asp-validation-for="UserId" class="invalid-input"></span>
                         </div>
 
                         <div class="form-group">

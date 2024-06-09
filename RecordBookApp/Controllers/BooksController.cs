@@ -1,10 +1,12 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Metadata.Internal;
 using RecordBookApp.Models;
 
 namespace RecordBookApp.Controllers
@@ -35,112 +37,113 @@ namespace RecordBookApp.Controllers
             return View(books);
         }
 
-        // GET: Books/Details/5
-        public async Task<IActionResult> Details(int? id)
-        {
-            if (id == null)
-            {
-                return NotFound();
-            }
-
-            var book = await _context.Books
-                .Include(b => b.User)
-                .FirstOrDefaultAsync(m => m.BookId == id);
-            if (book == null)
-            {
-                return NotFound();
-            }
-
-            return View(book);
-        }
 
         // GET: Books/Create
+        [HttpGet]
         public IActionResult Create()
         {
-            var userId = HttpContext.Session.GetString("UserId");
-            var book = new Book();
-
-            if (userId != null)
-            {
-                book.UserId = int.Parse(userId); // Parse the string UserId back to int
-                ViewData["UserId"] = userId;
-            }
-            return View(book);
+            return View();
         }
 
-        // POST: Books/Create
-        // To protect from overposting attacks, enable the specific properties you want to bind to.
-        // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Create([Bind("BookId,BookName,UserId")] Book book)
+        public async Task<IActionResult> Create(BookView bookView)
         {
-            var userId = int.Parse(HttpContext.Session.GetString("UserId"));
+            var userId = HttpContext.Session.GetString("UserId");
+
+            if (string.IsNullOrEmpty(userId))
+            {
+                return View("Error"); // Handle the case where UserId is not found in the session
+            }
 
             // Check if user exists before saving
-            var user = await _context.Users.FindAsync(userId);
+            var user = await _context.Users.FindAsync(int.Parse(userId));
             if (user == null)
             {
                 // Handle user not found scenario (e.g., display error message)
                 return View("Error"); // Or redirect to appropriate error page
             }
 
-            book.UserId = userId;
+            var book = new Book
+            {
+                BookName = bookView.BookName,
+                UserId = int.Parse(userId)
+            };
 
-            _context.Add(book);
-            await _context.SaveChangesAsync();
-            return RedirectToAction(nameof(Index));
-            
+            if (ModelState.IsValid)
+            {
+                _context.Add(book);
+                await _context.SaveChangesAsync();
+                return RedirectToAction(nameof(Index));
+            }
+
+            // Log validation errors
+            var errors = ModelState.Values.SelectMany(v => v.Errors);
+            foreach (var error in errors)
+            {
+                Debug.WriteLine($"Error: {error.ErrorMessage}"); // Log the error message
+                if (error.Exception != null)
+                {
+                    Debug.WriteLine($"Exception: {error.Exception.Message}"); // Log the exception message if available
+                }
+            }
+
+            return View(bookView);
         }
 
+
         // GET: Books/Edit/5
-        public async Task<IActionResult> Edit(int? id)
+        public IActionResult Edit(int id)
         {
-            if (id == null)
-            {
-                return NotFound();
-            }
-
-            var book = await _context.Books.FindAsync(id);
-            if (book == null)
-            {
-                return NotFound();
-            }
-
             var currentUserId = HttpContext.Session.GetString("UserId");
-            if (book.UserId.ToString() != currentUserId)
+
+            var book = _context.Books.Find(id);
+            if (book == null || book.UserId.ToString() != currentUserId)
             {
                 return Forbid();
             }
 
-            ViewData["UserId"] = new SelectList(new List<SelectListItem>
+            var viewModel = new BookView
             {
-                new SelectListItem { Value = book.UserId.ToString(), Text = _context.Users.Find(book.UserId).Email }
-            }, "Value", "Text");
+                BookName = book.BookName
+            };
 
-            return View(book);
+            return View(viewModel); // Pass viewModel to the view
         }
+
 
         // POST: Books/Edit/5
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Edit(int id, [Bind("BookId,BookName,UserId")] Book book)
+        
+        public async Task<IActionResult> Edit(int id, BookView inputModel)
         {
-            if (id != book.BookId)
-            {
-                return NotFound();
-            }
-
             var currentUserId = HttpContext.Session.GetString("UserId");
-            if (book.UserId.ToString() != currentUserId)
+
+            var book = await _context.Books.FindAsync(id);
+            if (book == null || book.UserId.ToString() != currentUserId)
             {
                 return Forbid();
             }
 
+            if (ModelState.IsValid)
+            {
                 try
                 {
-                    _context.Update(book);
+                    _context.Entry(book).State = EntityState.Detached;
+
+                    // Create a new Book object
+                    var updatedBook = new Book
+                    {
+                        BookId = id,
+                        BookName = inputModel.BookName,
+                        UserId = book.UserId // Retain the original UserId
+                    };
+
+                    // Update the database with the new Book object
+                    _context.Update(updatedBook);
                     await _context.SaveChangesAsync();
+                    return RedirectToAction(nameof(Index));
                 }
                 catch (DbUpdateConcurrencyException)
                 {
@@ -152,14 +155,11 @@ namespace RecordBookApp.Controllers
                     {
                         throw;
                     }
-                 }
+                }
+            }
 
-            ViewData["UserId"] = new SelectList(new List<SelectListItem>
-            {
-                new SelectListItem { Value = book.UserId.ToString(), Text = _context.Users.Find(book.UserId).Email }
-            }, "Value", "Text");
-
-            return View(book);
+            // If ModelState is not valid, return to the view with the inputModel
+            return View(inputModel);
         }
 
 

@@ -1,5 +1,4 @@
-@model RecordBookApp.Models.Book
-@inject IHttpContextAccessor HttpContextAccessor
+@model RecordBookApp.Models.BookView
 
 <!DOCTYPE html>
 <html lang="en">
@@ -45,7 +44,5 @@
 </html>
 
 @section Scripts {
-    @{
-        await Html.RenderPartialAsync("_ValidationScriptsPartial");
-    }
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
 }
