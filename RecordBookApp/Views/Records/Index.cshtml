@@ -2,64 +2,61 @@
 
 @{
     ViewData["Title"] = "Index";
+    int counter = 1;
 }
 
-<h1>Index</h1>
+<script type="text/javascript">
+    function toggleRowExpansion(event) {
+        const clickedElement = event.target;
+        const hasAction = clickedElement.classList.contains('asp-action') || clickedElement.parentElement?.classList.contains('asp-action');
 
-<p>
-    <a asp-action="Create">Create New</a>
-</p>
-<table class="table">
-    <thead>
-        <tr>
-            <th>
-                @Html.DisplayNameFor(model => model.Date)
-            </th>
-            <th>
-                @Html.DisplayNameFor(model => model.Time)
-            </th>
-            <th>
-                @Html.DisplayNameFor(model => model.Amount)
-            </th>
-            <th>
-                @Html.DisplayNameFor(model => model.Book)
-            </th>
-            <th>
-                @Html.DisplayNameFor(model => model.Category)
-            </th>
-            <th>
-                @Html.DisplayNameFor(model => model.Payment)
-            </th>
-            <th></th>
-        </tr>
-    </thead>
-    <tbody>
-@foreach (var item in Model) {
-        <tr>
-            <td>
-                @Html.DisplayFor(modelItem => item.Date)
-            </td>
-            <td>
-                @Html.DisplayFor(modelItem => item.Time)
-            </td>
-            <td>
-                @Html.DisplayFor(modelItem => item.Amount)
-            </td>
-            <td>
-                @Html.DisplayFor(modelItem => item.Book.BookName)
-            </td>
-            <td>
-                @Html.DisplayFor(modelItem => item.Category.Type)
-            </td>
-            <td>
-                @Html.DisplayFor(modelItem => item.Payment.Type)
-            </td>
-            <td>
-                <a asp-action="Edit" asp-route-id="@item.RecordId">Edit</a> |
-                <a asp-action="Details" asp-route-id="@item.RecordId">Details</a> |
-                <a asp-action="Delete" asp-route-id="@item.RecordId">Delete</a>
-            </td>
-        </tr>
-}
-    </tbody>
-</table>
+        if (hasAction) {
+            // Prevent default behavior if anchor tag with asp-action is clicked
+            event.preventDefault();
+        } else {
+            // Toggle row expansion otherwise
+            clickedElement.parentElement.classList.toggle('expanded');
+        }
+    }
+</script>
+
+<div class="container mt-3">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h1 class="h1">Your Records</h1>
+        <a asp-action="Create" class="btn btn-primary">
+            <i class="fas fa-plus"></i> Create New Record
+        </a>
+    </div>
+
+    <table class="table table-striped table-bordered">
+        <thead>
+            <tr>
+                <th scope="col">No.</th>
+                <th scope="col">Date</th>
+                <th scope="col">Time</th>
+                <th scope="col">Amount</th>
+                <th scope="col">Category</th>
+                <th scope="col">Payment</th>
+                <th scope="col">Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var item in Model)
+            {
+                <tr class="expandable-row">
+                    <th scope="row">@counter</th>
+                    <td>@item.Date.ToString("yyyy-MM-dd")</td>
+                    <td>@item.Time.ToString("HH:mm")</td>
+                    <td>@Html.DisplayFor(modelItem => item.Amount)</td>
+                    <td>@Html.DisplayFor(modelItem => item.Category.Name)</td>
+                    <td>@Html.DisplayFor(modelItem => item.Payment.Type)</td>
+                    <td>
+                        <a asp-action="Edit" asp-route-id="@item.RecordId" class="btn btn-sm btn-light">Edit</a>
+                        <a asp-action="Delete" asp-route-id="@item.RecordId" class="btn btn-sm btn-light">Delete</a>
+                    </td>
+                </tr>
+                counter++;
+            }
+        </tbody>
+    </table>
+</div>

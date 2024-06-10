@@ -5,59 +5,6 @@
     int counter = 1;
 }
 
-<script>
-    function toggleRowExpansion(event) {
-        const clickedElement = event.target;
-        const hasAction = clickedElement.classList.contains('asp-action') || clickedElement.parentElement?.classList.contains('asp-action');
-
-        if (hasAction) {
-            // Prevent default behavior if anchor tag with asp-action is clicked
-            event.preventDefault();
-        } else {
-            // Toggle row expansion otherwise
-            clickedElement.parentElement.classList.toggle('expanded');
-        }
-    }
-</script>
-
-<style>
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" >
-
-    table {
-        width: 70%; /* Adjust table width as needed */
-        margin: 0 auto; /* Center the table horizontally */
-        border-collapse: collapse; /* Remove table borders */
-    }
-
-    th, td {
-        padding: 10px; /* Add padding to cells */
-        border: 1px solid #ddd; /* Add thin border */
-    }
-
-    th {
-        text-align: left; /* Align table headers to the left */
-    }
-
-    .btn-primary {
-        background-color: #007bff; /* Change button color if desired */
-        border-color: #007bff;
-    }
-
-    .mt-5 {
-        margin-top: 2rem; /* Add margin-top for spacing */
-    }
-
-    /* Styles for row expansion animation */
-    .expandable-row {
-        transition: height 0.3s ease-in-out; /* Smooth transition */
-    }
-
-    .expanded {
-        height: auto; /* Expand row height */
-        border: 1px solid #ddd; /* Add border on expansion */
-    }
-</style>
-
 <div class="container mt-3">
     <div class="d-flex justify-content-between align-items-center mb-3">
         <h1 class="h1">Your Books</h1>
@@ -77,24 +24,18 @@
         <tbody>
             @foreach (var item in Model)
             {
-                <a asp-action="Details" asp-route-id="@item.BookId" onclick="toggleRowExpansion(this.parentElement)">
                 <tr class="expandable-row">
-                    <th scope="row">@counter</th>
-                    <td><a asp-action="Details" asp-route-id="@item.BookId">@Html.DisplayFor(modelItem => item.BookName)</a></td>
+                    <td>@counter</td>
                     <td>
-                        <div class="dropdown">
-                            <button class="btn btn-sm btn-light dropdown-toggle" type="button" id="dropdownMenuButton" data-bs-toggle="dropdown" aria-expanded="false">
-                                <i class="fas fa-ellipsis-h"></i>
-                            </button>
-                            <ul class="dropdown-menu" aria-labelledby="dropdownMenuButton">
-                                <li><a class="dropdown-item" asp-action="Edit" asp-route-id="@item.BookId">Edit</a></li>
-                                <li><a class="dropdown-item" asp-action="Delete" asp-route-id="@item.BookId">Delete</a></li>
-                            </ul>
-
-                        </div>
+                        <a asp-action="BookIdretrieval" asp-route-bookId="@item.BookId">
+                            @Html.DisplayFor(modelItem => item.BookName)
+                        </a>
+                    </td>
+                    <td>
+                        <a asp-action="Edit" asp-route-id="@item.BookId" class="btn btn-sm btn-light">Edit</a>
+                        <a asp-action="Delete" asp-route-id="@item.BookId" class="btn btn-sm btn-light">Delete</a>
                     </td>
                 </tr>
-                </a>
                 counter++;
             }
         </tbody>

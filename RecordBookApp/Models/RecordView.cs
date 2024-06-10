@@ -11,5 +11,11 @@ namespace RecordBookApp.Models
 
         [Required]
         public decimal Amount { get; set; }
+
+        [Required]
+        public int CategoryId { get; set; }
+
+        [Required]
+        public int PaymentId { get; set; }
     }
 }

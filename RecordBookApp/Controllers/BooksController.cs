@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using System.Net;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
@@ -18,6 +19,12 @@ namespace RecordBookApp.Controllers
         public BooksController(ApplicationDbContext context)
         {
             _context = context;
+        }
+
+        public async Task<IActionResult> BookIdretrieval(int bookId)
+        {
+            HttpContext.Session.SetString("BookId", bookId.ToString());
+            return RedirectToAction("Index","Records");
         }
 
         // GET: Books
