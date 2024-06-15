@@ -38,11 +38,24 @@ namespace RecordBookApp.Controllers
                                       .Where(b => b.BookId == parsedBookId)
                                       .ToListAsync();
 
+            // Calculate total cashin and cashout balances
+            var totalCashIn = records.Where(r => r.Category.Type.ToLower() == "cashin").Sum(r => r.Amount);
+            var totalCashOut = records.Where(r => r.Category.Type.ToLower() == "cashout").Sum(r => r.Amount);
+
+            // Calculate net balance
+            var netBalance = totalCashIn - totalCashOut;
+
+            // Store the balances in ViewBag
+            ViewBag.TotalCashIn = totalCashIn;
+            ViewBag.TotalCashOut = totalCashOut;
+            ViewBag.NetBalance = netBalance;
+
             return View(records);
         }
 
+
         // GET: Records/Create
-        public async Task<IActionResult> Create()
+        public async Task<IActionResult> Create(string buttonClicked = null) // Optional buttonClicked parameter
         {
             RecordView recordView = new RecordView()
             {
@@ -50,7 +63,22 @@ namespace RecordBookApp.Controllers
                 Time = DateTime.Now
             };
 
-            ViewData["CategoryId"] = new SelectList(_context.Categories, "CategoryId", "Name");
+            // Filter categories based on buttonClicked
+            IEnumerable<Category> categories;
+            if (buttonClicked == "cashin")
+            {
+                categories = _context.Categories.Where(c => c.Type.ToLower() == "cashin");
+            }
+            else if (buttonClicked == "cashout")
+            {
+                categories = _context.Categories.Where(c => c.Type.ToLower() == "cashout");
+            }
+            else
+            {
+                categories = _context.Categories; // Show all categories by default
+            }
+
+            ViewData["CategoryId"] = new SelectList(categories, "CategoryId", "Name");
             ViewData["PaymentId"] = new SelectList(_context.Payments, "PaymentId", "Type");
 
             // Retrieve bookId from session

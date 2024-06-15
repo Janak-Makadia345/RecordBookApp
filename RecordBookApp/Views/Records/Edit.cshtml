@@ -1,54 +1,90 @@
-@model RecordBookApp.Models.Record
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>@ViewData["Title"]</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" integrity="sha384-1BmE4kWBq78iYhFldvKuhfTAU6auU8tT94WrHftjDbrCEXSU1oBoqyl2QvZ6jIW3" crossorigin="anonymous">
+    <style>
+        .invalid-input {
+            color: red;
+        }
 
-@{
-    ViewData["Title"] = "Edit";
-}
+        .card-body {
+            padding: 1.25rem; /* Adjust padding as per your preference */
+        }
+    </style>
+</head>
+<body>
+    <div class="container mt-5">
+        <div class="row justify-content-center">
+            <div class="col-md-8">
+                <div class="card">
+                    <div class="card-header">
+                        <h3>Edit Record</h3>
+                    </div>
+                    <div class="card-body">
+                        @model RecordBookApp.Models.Record
 
-<h1>Edit</h1>
-
-<h4>Record</h4>
-<hr />
-<div class="row">
-    <div class="col-md-4">
-        <form asp-action="Edit">
-            <div asp-validation-summary="ModelOnly" class="text-danger"></div>
-            <input type="hidden" asp-for="RecordId" />
-            <div class="form-group">
-                <label asp-for="Date" class="control-label"></label>
-                <input asp-for="Date" class="form-control" />
-                <span asp-validation-for="Date" class="text-danger"></span>
+                        <form asp-action="Edit" method="post">
+                            <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+                            <input type="hidden" asp-for="RecordId" />
+                            <div class="mb-3 row">
+                                <label class="col-sm-3 col-form-label">Date</label>
+                                <div class="col-sm-9">
+                                    <input asp-for="Date" class="form-control" type="date" />
+                                    <span asp-validation-for="Date" class="invalid-input"></span>
+                                </div>
+                            </div>
+                            <div class="mb-3 row">
+                                <label class="col-sm-3 col-form-label">Time</label>
+                                <div class="col-sm-9">
+                                    <input asp-for="Time" class="form-control" type="time" />
+                                    <span asp-validation-for="Time" class="invalid-input"></span>
+                                </div>
+                            </div>
+                            <div class="mb-3 row">
+                                <label class="col-sm-3 col-form-label">Amount</label>
+                                <div class="col-sm-9">
+                                    <input asp-for="Amount" class="form-control" />
+                                    <span asp-validation-for="Amount" class="invalid-input"></span>
+                                </div>
+                            </div>
+                            <div class="mb-3 row">
+                                <label class="col-sm-3 col-form-label">Category</label>
+                                <div class="col-sm-9">
+                                    <select asp-for="CategoryId" class="form-control" asp-items="ViewBag.CategoryId"></select>
+                                    <span asp-validation-for="CategoryId" class="invalid-input"></span>
+                                </div>
+                            </div>
+                            <div class="mb-3 row">
+                                <label class="col-sm-3 col-form-label">Payment</label>
+                                <div class="col-sm-9">
+                                    <select asp-for="PaymentId" class="form-control" asp-items="ViewBag.PaymentId"></select>
+                                    <span asp-validation-for="PaymentId" class="invalid-input"></span>
+                                </div>
+                            </div>
+                            <hr />
+                            <div class="form-group row justify-content-center">
+                                <!-- Center align the form group -->
+                                <div class="col-sm-12">
+                                    <!-- Adjust column size for the buttons -->
+                                    <input type="submit" value="Save" class="btn btn-primary me-2" /> <!-- Add margin between buttons -->
+                                    <a asp-action="Index" class="btn btn-secondary float-end">Back to List</a>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                </div>
             </div>
-            <div class="form-group">
-                <label asp-for="Time" class="control-label"></label>
-                <input asp-for="Time" class="form-control" />
-                <span asp-validation-for="Time" class="text-danger"></span>
-            </div>
-            <div class="form-group">
-                <label asp-for="Amount" class="control-label"></label>
-                <input asp-for="Amount" class="form-control" />
-                <span asp-validation-for="Amount" class="text-danger"></span>
-            </div>
-            <div class="form-group">
-                <label asp-for="CategoryId" class="control-label"></label>
-                <select asp-for="CategoryId" class="form-control" asp-items="ViewBag.CategoryId"></select>
-                <span asp-validation-for="CategoryId" class="text-danger"></span>
-            </div>
-            <div class="form-group">
-                <label asp-for="PaymentId" class="control-label"></label>
-                <select asp-for="PaymentId" class="form-control" asp-items="ViewBag.PaymentId"></select>
-                <span asp-validation-for="PaymentId" class="text-danger"></span>
-            </div>
-            <div class="form-group">
-                <input type="submit" value="Save" class="btn btn-primary" />
-            </div>
-        </form>
+        </div>
     </div>
-</div>
-
-<div>
-    <a asp-action="Index">Back to List</a>
-</div>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-ka5LXmE1fgy1AoWex4GkN2tHytE9ZEMksTFR8IGUe4BQk2H9sa5eUV76s59h/EJ7" crossorigin="anonymous"></script>
+</body>
+</html>
 
 @section Scripts {
-    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
 }

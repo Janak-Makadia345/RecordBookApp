@@ -9,12 +9,16 @@
         .invalid-input {
             color: red;
         }
+
+        .card-body {
+            padding: 1.25rem; /* Adjust padding as per your preference */
+        }
     </style>
 </head>
 <body>
     <div class="container mt-5">
         <div class="row justify-content-center">
-            <div class="col-md-6">
+            <div class="col-md-8">
                 <div class="card">
                     <div class="card-header">
                         <h3>Create Record</h3>
@@ -24,33 +28,49 @@
 
                         <form asp-action="Create" method="post">
                             <div asp-validation-summary="ModelOnly" class="text-danger"></div>
-                            <div class="mb-3">
-                                <label asp-for="Date" class="form-label">Date</label>
-                                <input asp-for="Date" class="form-control" type="date"/>
-                                <span asp-validation-for="Date" class="invalid-input"></span>
+                            <div class="mb-3 row">
+                                <label class="col-sm-3 col-form-label">Date</label>
+                                <div class="col-sm-9">
+                                    <input asp-for="Date" class="form-control" type="date" />
+                                    <span asp-validation-for="Date" class="invalid-input"></span>
+                                </div>
                             </div>
-                            <div class="mb-3">
-                                <label asp-for="Time" class="form-label">Time</label>
-                                <input asp-for="Time" class="form-control" type="time"/>
-                                <span asp-validation-for="Time" class="invalid-input"></span>
+                            <div class="mb-3 row">
+                                <label class="col-sm-3 col-form-label">Time</label>
+                                <div class="col-sm-9">
+                                    <input asp-for="Time" class="form-control" type="time" />
+                                    <span asp-validation-for="Time" class="invalid-input"></span>
+                                </div>
                             </div>
-                            <div class="mb-3">
-                                <label asp-for="Amount" class="form-label">Amount</label>
-                                <input asp-for="Amount" class="form-control" />
-                                <span asp-validation-for="Amount" class="invalid-input"></span>
+                            <div class="mb-3 row">
+                                <label class="col-sm-3 col-form-label">Amount</label>
+                                <div class="col-sm-9">
+                                    <input asp-for="Amount" class="form-control" />
+                                    <span asp-validation-for="Amount" class="invalid-input"></span>
+                                </div>
                             </div>
-                            <div class="mb-3">
-                                <label asp-for="CategoryId" class="form-label">Category</label>
-                                <select asp-for="CategoryId" class="form-control" asp-items="ViewBag.CategoryId"></select>
-                                <span asp-validation-for="CategoryId" class="invalid-input"></span>
+                            <div class="mb-3 row">
+                                <label class="col-sm-3 col-form-label">Category</label>
+                                <div class="col-sm-9">
+                                    <select asp-for="CategoryId" class="form-control" asp-items="ViewBag.CategoryId"></select>
+                                    <span asp-validation-for="CategoryId" class="invalid-input"></span>
+                                </div>
                             </div>
-                            <div class="mb-3">
-                                <label asp-for="PaymentId" class="form-label">Payment</label>
-                                <select asp-for="PaymentId" class="form-control" asp-items="ViewBag.PaymentId"></select>
-                                <span asp-validation-for="PaymentId" class="invalid-input"></span>
+                            <div class="mb-3 row">
+                                <label class="col-sm-3 col-form-label">Payment</label>
+                                <div class="col-sm-9">
+                                    <select asp-for="PaymentId" class="form-control" asp-items="ViewBag.PaymentId"></select>
+                                    <span asp-validation-for="PaymentId" class="invalid-input"></span>
+                                </div>
                             </div>
-                            <div class="form-group">
-                                <input type="submit" value="Create" class="btn btn-primary" />
+                            <hr />
+                            <div class="form-group row justify-content-center">
+                                <!-- Center align the form group -->
+                                <div class="col-sm-12">
+                                    <!-- Adjust column size for the buttons -->
+                                    <input type="submit" value="Create" class="btn btn-primary me-2" /> <!-- Add margin between buttons -->
+                                    <a asp-action="Index" class="btn btn-secondary float-end">Back to List</a>
+                                </div>
                             </div>
                         </form>
                     </div>
@@ -58,7 +78,7 @@
             </div>
         </div>
     </div>
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.model.min.js" integrity="sha384-g7sk9UUOo1yNZtZN832eD4vZwQRuL4zVaHoPzwYtN9O13cFWjsGSYtN3jyBxqsa" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-ka5LXmE1fgy1AoWex4GkN2tHytE9ZEMksTFR8IGUe4BQk2H9sa5eUV76s59h/EJ7" crossorigin="anonymous"></script>
 </body>
 </html>
 

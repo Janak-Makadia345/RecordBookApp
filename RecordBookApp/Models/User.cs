@@ -3,7 +3,7 @@ using System.ComponentModel.DataAnnotations;
 
 namespace RecordBookApp.Models
 {
-    public class User : IdentityUser<string>
+    public class User 
     {
         [Key]
         public int UserId { get; set; }
@@ -14,6 +14,10 @@ namespace RecordBookApp.Models
 
         [Required]
         public string Password { get; set; }
+
+        public bool IsEmailVerified { get; set; }
+
+        public string EmailVerificationToken { get; set; }
 
         // Navigation property
         public ICollection<Book> Books { get; set; }
