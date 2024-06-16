@@ -49,7 +49,7 @@ namespace RecordBookApp.Controllers
         [HttpGet]
         public IActionResult Create()
         {
-            return View();
+            return PartialView("_CreatePartial");
         }
 
         [HttpPost]
@@ -60,15 +60,13 @@ namespace RecordBookApp.Controllers
 
             if (string.IsNullOrEmpty(userId))
             {
-                return View("Error"); // Handle the case where UserId is not found in the session
+                return Json(new { success = false, message = "User ID not found in session" });
             }
 
-            // Check if user exists before saving
             var user = await _context.Users.FindAsync(int.Parse(userId));
             if (user == null)
             {
-                // Handle user not found scenario (e.g., display error message)
-                return View("Error"); // Or redirect to appropriate error page
+                return Json(new { success = false, message = "User not found" });
             }
 
             var book = new Book
@@ -81,22 +79,12 @@ namespace RecordBookApp.Controllers
             {
                 _context.Add(book);
                 await _context.SaveChangesAsync();
-                return RedirectToAction(nameof(Index));
+                return Json(new { success = true });
             }
 
-            // Log validation errors
-            var errors = ModelState.Values.SelectMany(v => v.Errors);
-            foreach (var error in errors)
-            {
-                Debug.WriteLine($"Error: {error.ErrorMessage}"); // Log the error message
-                if (error.Exception != null)
-                {
-                    Debug.WriteLine($"Exception: {error.Exception.Message}"); // Log the exception message if available
-                }
-            }
-
-            return View(bookView);
+            return PartialView("_CreatePartial", bookView);
         }
+
 
 
         // GET: Books/Edit/5

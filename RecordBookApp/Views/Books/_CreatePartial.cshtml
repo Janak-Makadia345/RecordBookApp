@@ -1,0 +1,12 @@
+@model RecordBookApp.Models.BookView
+
+<div>
+    <form asp-action="Create" method="post" id="createBookForm">
+        <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+        <div class="mb-3">
+            <label asp-for="BookName" class="form-label">Enter Book Name</label>
+            <input asp-for="BookName" class="form-control" />
+            <span asp-validation-for="BookName" class="invalid-input"></span>
+        </div>
+    </form>
+</div>

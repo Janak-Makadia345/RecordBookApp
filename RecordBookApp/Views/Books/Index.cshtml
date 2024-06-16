@@ -8,9 +8,9 @@
 <div class="container mt-3">
     <div class="d-flex justify-content-between align-items-center mb-3">
         <h1 class="h1">Your Books</h1>
-        <a asp-action="Create" class="btn btn-primary">
+        <button id="createBookButton" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createBookModal">
             <i class="fas fa-plus"></i> Create New Book
-        </a>
+        </button>
     </div>
 
     <table class="table table-striped table-bordered">
@@ -41,3 +41,89 @@
         </tbody>
     </table>
 </div>
+
+<!-- Bootstrap Modal -->
+<div class="modal fade" id="createBookModal" tabindex="-1" aria-labelledby="createBookModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="createBookModalLabel">Create New Book</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="createBookForm">
+                    <!-- Form content will be loaded via AJAX -->
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-primary" id="submitCreateBookForm">Create</button>
+                <button type="button" class="btn btn-secondary ms-auto" data-bs-dismiss="modal">Back to List</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .toast-success {
+        background-color: #018749;
+    }
+</style>
+
+
+@section Scripts {
+    <script>
+        $(document).ready(function () {
+            $('#createBookButton').click(function () {
+                $.ajax({
+                    url: '@Url.Action("Create", "Books")',
+                    type: 'GET',
+                    success: function (response) {
+                        $('#createBookForm').html(response);
+                    },
+                    error: function () {
+                        alert('Error loading form');
+                    }
+                });
+            });
+
+            // Function to handle form submission
+            function submitCreateBookForm() {
+                var form = $('#createBookForm');
+                $.ajax({
+                    url: '@Url.Action("Create", "Books")',
+                    type: 'POST',
+                    data: form.serialize(),
+                    success: function (response) {
+                        if (response.success) {
+                            $('#createBookModal').modal('hide'); // Hide modal on success
+                            toastr.success('Book added successfully!', 'Success', {
+                                positionClass: 'toast-bottom-right'
+                            });
+                            setTimeout(function () {
+                                location.reload();
+                            }, 1500); // Reload the page after a short delay
+                        } else {
+                            $('#createBookForm').html(response);
+                        }
+                    },
+                    error: function () {
+                        alert('Error submitting form');
+                    }
+                });
+            }
+
+            // Submit form on button click
+            $('#submitCreateBookForm').click(function () {
+                submitCreateBookForm();
+            });
+
+            // Submit form on Enter key press
+            $('#createBookModal').on('keypress', function (e) {
+                if (e.which == 13) { // Enter key code is 13
+                    e.preventDefault();
+                    submitCreateBookForm();
+                }
+            });
+        });
+    </script>
+}
