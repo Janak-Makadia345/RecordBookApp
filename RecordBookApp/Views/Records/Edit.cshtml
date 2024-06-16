@@ -1,3 +1,9 @@
+@model RecordBookApp.Models.Record
+
+@{
+    ViewData["Title"] = "Edit Record";
+}
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -11,12 +17,20 @@
         }
 
         .card-body {
-            padding: 1.25rem; /* Adjust padding as per your preference */
+            padding: 1rem; /* Adjust padding as per your preference */
+        }
+
+        .mb-3.row {
+            margin-bottom: 0.75rem !important; /* Adjust margin to make layout compact */
+        }
+
+        .form-control, .btn {
+            padding: 0.5rem 0.75rem; /* Adjust padding for compactness */
         }
     </style>
 </head>
 <body>
-    <div class="container mt-5">
+    <div class="container mt-4">
         <div class="row justify-content-center">
             <div class="col-md-8">
                 <div class="card">
@@ -24,11 +38,9 @@
                         <h3>Edit Record</h3>
                     </div>
                     <div class="card-body">
-                        @model RecordBookApp.Models.Record
-
-                        <form asp-action="Edit" method="post">
-                            <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+                        <form asp-action="Edit" method="post" enctype="multipart/form-data">
                             <input type="hidden" asp-for="RecordId" />
+                            <div asp-validation-summary="ModelOnly" class="text-danger"></div>
                             <div class="mb-3 row">
                                 <label class="col-sm-3 col-form-label">Date</label>
                                 <div class="col-sm-9">
@@ -64,12 +76,28 @@
                                     <span asp-validation-for="PaymentId" class="invalid-input"></span>
                                 </div>
                             </div>
-                            <hr />
+                            <div class="mb-3 row">
+                                <label class="col-sm-3 col-form-label">New File</label>
+                                <div class="col-sm-9">
+                                    <input type="file" name="File" class="form-control" />
+                                    <span class="text-muted">Upload PDF or image files only.</span>
+                                    <div class="mt-2">
+                                        <span>Current file: </span>
+                                        @if (!string.IsNullOrEmpty(Model.FileName))
+                                        {
+                                            <span class="me-2">@Model.FileName</span>
+                                            <a asp-action="Download" asp-route-id="@Model.RecordId">Download File</a>
+                                        }
+                                        else
+                                        {
+                                            <span>No file uploaded.</span>
+                                        }
+                                    </div>
+                                </div>
+                            </div>
                             <div class="form-group row justify-content-center">
-                                <!-- Center align the form group -->
                                 <div class="col-sm-12">
-                                    <!-- Adjust column size for the buttons -->
-                                    <input type="submit" value="Save" class="btn btn-primary me-2" /> <!-- Add margin between buttons -->
+                                    <input type="submit" value="Save" class="btn btn-primary me-2" />
                                     <a asp-action="Index" class="btn btn-secondary float-end">Back to List</a>
                                 </div>
                             </div>

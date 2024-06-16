@@ -59,6 +59,22 @@
                             <dd class="col-sm-6">
                                 @Html.DisplayFor(model => model.Payment.Type)
                             </dd>
+                            @if (!string.IsNullOrEmpty(Model.FileName))
+                            {
+                                <dt class="col-sm-6">
+                                    File
+                                </dt>
+                                <dd class="col-sm-6">
+                                    @if (Model.FileName.EndsWith(".pdf"))
+                                    {
+                                        <a href="@Url.Action("Download", new { id = Model.RecordId })">View PDF</a>
+                                    }
+                                    else
+                                    {
+                                        <img src="@Url.Action("Preview", new { id = Model.RecordId })" alt="Image" width="50" height="50" />
+                                    }
+                                </dd>
+                            }
                         </dl>
 
                         <form asp-action="Delete">

@@ -75,6 +75,7 @@
                 <th scope="col">Amount</th>
                 <th scope="col">Category</th>
                 <th scope="col">Payment</th>
+                <th scope="col">File</th>
                 <th scope="col">Actions</th>
             </tr>
         </thead>
@@ -82,14 +83,33 @@
             @foreach (var item in Model)
             {
                 <tr class="expandable-row">
-                    <th scope="row">@counter</th>
+                    <td>@counter</td>
                     <td>@item.Date.ToString("yyyy-MM-dd")</td>
                     <td>@item.Time.ToString("HH:mm")</td>
-                    <td style="color: @((item.Category.Type.ToLower() == "cashin") ? "green" : "red")">
-                        @Html.DisplayFor(modelItem => item.Amount)
-                    </td>
+                    <td style="color: @((item.Category.Type.ToLower() == "cashin") ? "green" : "red")">@item.Amount</td>
                     <td>@Html.DisplayFor(modelItem => item.Category.Name)</td>
                     <td>@Html.DisplayFor(modelItem => item.Payment.Type)</td>
+                    <td>
+                        @if (!string.IsNullOrEmpty(item.FileName))
+                        {
+                            if (item.FileName.EndsWith(".pdf"))
+                            {
+                                <a href="@Url.Action("Preview", new { id = item.RecordId })">
+                                    <i class="bi bi-file-earmark-pdf"></i>
+                                </a>
+                            }
+                            else if (item.FileName.EndsWith(".jpg") || item.FileName.EndsWith(".jpeg") || item.FileName.EndsWith(".png"))
+                            {
+                                <a href="@Url.Action("Preview", new { id = item.RecordId })">
+                                    <i class="bi bi-image"></i>
+                                </a>
+                            }
+                            else
+                            {
+                                <span>Unsupported file type</span>
+                            }
+                        }
+                    </td>
                     <td>
                         <a asp-action="Edit" asp-route-id="@item.RecordId" class="btn btn-sm btn-light">Edit</a>
                         <a asp-action="Delete" asp-route-id="@item.RecordId" class="btn btn-sm btn-light">Delete</a>
@@ -105,9 +125,11 @@
     .bg-navy {
         background-color: #001f3f !important;
     }
+
     .card {
         width: 100%;
     }
+
     .row.justify-content-center {
         text-align: center;
     }

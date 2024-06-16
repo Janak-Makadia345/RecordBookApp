@@ -1,12 +1,13 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Net;
 using System.Threading.Tasks;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
 using RecordBookApp.Models;
+using System.IO;
 
 namespace RecordBookApp.Controllers
 {
@@ -53,7 +54,6 @@ namespace RecordBookApp.Controllers
             return View(records);
         }
 
-
         // GET: Records/Create
         public async Task<IActionResult> Create(string buttonClicked = null) // Optional buttonClicked parameter
         {
@@ -92,9 +92,22 @@ namespace RecordBookApp.Controllers
         // POST: Records/Create
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Create([Bind("Date,Time,Amount,CategoryId,PaymentId")] RecordView recordView)
+        public async Task<IActionResult> Create([Bind("Date,Time,Amount,CategoryId,PaymentId,File")] RecordView recordView, IFormFile file)
         {
             var retrievedBookId = int.Parse(HttpContext.Session.GetString("BookId"));
+
+            byte[] fileData = null;
+            string fileName = null;
+
+            if (file != null && file.Length > 0) // Check if a file was uploaded
+            {
+                using (var ms = new MemoryStream())
+                {
+                    await file.CopyToAsync(ms);
+                    fileData = ms.ToArray();
+                    fileName = file.FileName;
+                }
+            }
 
             var record = new Record
             {
@@ -103,19 +116,16 @@ namespace RecordBookApp.Controllers
                 Amount = recordView.Amount,
                 CategoryId = recordView.CategoryId,
                 PaymentId = recordView.PaymentId,
-                BookId = retrievedBookId
+                BookId = retrievedBookId,
+                FileName = fileName,
+                FileData = fileData
             };
 
-            if (ModelState.IsValid)
-            {
+  
                 _context.Add(record);
                 await _context.SaveChangesAsync();
                 return RedirectToAction(nameof(Index));
-            }
-
-            ViewData["CategoryId"] = new SelectList(_context.Categories, "CategoryId", "Type", recordView.CategoryId);
-            ViewData["PaymentId"] = new SelectList(_context.Payments, "PaymentId", "Type", recordView.PaymentId);
-            return View(recordView);
+       
         }
 
 
@@ -127,117 +137,182 @@ namespace RecordBookApp.Controllers
                 return NotFound();
             }
 
-            var record = await _context.Records.FindAsync(id);
+            var record = await _context.Records.Include(r => r.Category).FirstOrDefaultAsync(r => r.RecordId == id);
             if (record == null)
             {
                 return NotFound();
             }
-            ViewData["CategoryId"] = new SelectList(_context.Categories, "CategoryId", "Name", record.CategoryId);
+
+            var recordView = new Record
+            {
+                RecordId = record.RecordId,
+                Date = record.Date,
+                Time = record.Time,
+                Amount = record.Amount,
+                CategoryId = record.CategoryId,
+                PaymentId = record.PaymentId,
+                FileName = record.FileName // Ensure FileName is populated for display
+            };
+
+            var categories = _context.Categories.Where(c => c.Type == record.Category.Type).ToList();
+            ViewData["CategoryId"] = new SelectList(categories, "CategoryId", "Name", record.CategoryId);
             ViewData["PaymentId"] = new SelectList(_context.Payments, "PaymentId", "Type", record.PaymentId);
-            return View(record);
+
+            return View(recordView);
         }
+
 
         // POST: Records/Edit/5
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Edit(int id, RecordView recordView)
+        public async Task<IActionResult> Edit(int id, Record recordView, IFormFile file)
+        {
+            if (id != recordView.RecordId)
+            {
+                return NotFound();
+            }
+
+            var record = await _context.Records.Include(r => r.Category).FirstOrDefaultAsync(r => r.RecordId == id);
+            if (record == null)
+            {
+                return NotFound();
+            }
+
+            var currentBookId = HttpContext.Session.GetString("BookId");
+
+            if (record.BookId.ToString() != currentBookId)
+            {
+                return Forbid();
+            }
+
+            byte[] fileData = record.FileData;
+            string fileName = record.FileName;
+
+            if (file != null && file.Length > 0) // Check if a new file was uploaded
+            {
+                using (var ms = new MemoryStream())
+                {
+                    await file.CopyToAsync(ms);
+                    fileData = ms.ToArray();
+                    fileName = file.FileName;
+                }
+            }
+
+            record.Date = recordView.Date;
+            record.Time = recordView.Time;
+            record.Amount = recordView.Amount;
+            record.CategoryId = recordView.CategoryId;
+            record.PaymentId = recordView.PaymentId;
+            record.FileName = fileName;
+            record.FileData = fileData;
+
+            try
+            {
+                _context.Update(record);
+                await _context.SaveChangesAsync();
+            }
+            catch (DbUpdateConcurrencyException)
+            {
+                if (!RecordExists(record.RecordId))
+                {
+                    return NotFound();
+                }
+                else
+                {
+                    throw;
+                }
+            }
+
+            await _context.SaveChangesAsync();
+            return RedirectToAction(nameof(Index));
+        }
+
+
+
+        // GET: Records/Delete/5
+        public async Task<IActionResult> Delete(int? id)
         {
             if (id == null)
             {
                 return NotFound();
             }
 
+            var record = await _context.Records
+                .Include(r => r.Book)
+                .Include(r => r.Category)
+                .Include(r => r.Payment)
+                .FirstOrDefaultAsync(m => m.RecordId == id);
+            if (record == null)
+            {
+                return NotFound();
+            }
+
+            return View(record);
+        }
+
+        // POST: Records/Delete/5
+        [HttpPost, ActionName("Delete")]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> DeleteConfirmed(int id)
+        {
             var record = await _context.Records.FindAsync(id);
-
-            var currentBookId = HttpContext.Session.GetString("BookId");
-
-            if (record == null || record.BookId.ToString() != currentBookId)
+            if (record != null)
             {
-                return Forbid();
+                _context.Records.Remove(record);
             }
 
-            if (ModelState.IsValid)
-            {
-                 try
-                 {
-                    _context.Entry(record).State = EntityState.Detached;
-
-                    // Update the actual Record model
-                    var updatedRecord = new Record
-                     {
-                         RecordId = id,
-                         Date = recordView.Date,
-                         Time = recordView.Time,
-                         Amount = recordView.Amount,
-                         PaymentId = recordView.PaymentId,
-                         CategoryId = recordView.CategoryId,
-                         BookId = record.BookId // Retain the original UserId
-                     };
-
-                     // Update other properties if needed
-                     _context.Update(updatedRecord);
-                     await _context.SaveChangesAsync();
-                 }
-                 catch (DbUpdateConcurrencyException)
-                 {
-                     if (!RecordExists(record.BookId))
-                     {
-                         return NotFound();
-                     }
-                     else
-                     {
-                         throw;
-                     }
-                 }
-                 return RedirectToAction(nameof(Index));
-            }
-
-            ViewData["CategoryId"] = new SelectList(_context.Categories, "CategoryId", "Name", recordView.CategoryId);
-            ViewData["PaymentId"] = new SelectList(_context.Payments, "PaymentId", "Type", recordView.PaymentId);
-            return View(recordView);
-
+            await _context.SaveChangesAsync();
+            return RedirectToAction(nameof(Index));
         }
 
-        // GET: Records/Delete/5
-        public async Task<IActionResult> Delete(int? id)
-            {
-                if (id == null)
-                {
-                    return NotFound();
-                }
-
-                var record = await _context.Records
-                    .Include(r => r.Book)
-                    .Include(r => r.Category)
-                    .Include(r => r.Payment)
-                    .FirstOrDefaultAsync(m => m.RecordId == id);
-                if (record == null)
-                {
-                    return NotFound();
-                }
-
-                return View(record);
-            }
-
-            // POST: Records/Delete/5
-            [HttpPost, ActionName("Delete")]
-            [ValidateAntiForgeryToken]
-            public async Task<IActionResult> DeleteConfirmed(int id)
-            {
-                var record = await _context.Records.FindAsync(id);
-                if (record != null)
-                {
-                    _context.Records.Remove(record);
-                }
-
-                await _context.SaveChangesAsync();
-                return RedirectToAction(nameof(Index));
-            }
-
-            private bool RecordExists(int id)
-            {
-                return _context.Records.Any(e => e.RecordId == id);
-            }
+        private bool RecordExists(int id)
+        {
+            return _context.Records.Any(e => e.RecordId == id);
         }
+
+        // GET: Records/Download/5
+        public async Task<IActionResult> Download(int id)
+        {
+            var record = await _context.Records.FindAsync(id);
+            if (record == null || record.FileData == null)
+            {
+                return NotFound();
+            }
+
+            return File(record.FileData, "application/octet-stream", record.FileName);
+        }
+
+        // GET: Records/Preview/5
+        public async Task<IActionResult> Preview(int id)
+        {
+            var record = await _context.Records.FindAsync(id);
+            if (record == null || record.FileData == null)
+            {
+                return NotFound();
+            }
+
+            string contentType;
+            if (record.FileName.EndsWith(".pdf", StringComparison.OrdinalIgnoreCase))
+            {
+                contentType = "application/pdf";
+            }
+            else if (record.FileName.EndsWith(".jpg", StringComparison.OrdinalIgnoreCase) ||
+                     record.FileName.EndsWith(".jpeg", StringComparison.OrdinalIgnoreCase))
+            {
+                contentType = "image/jpeg";
+            }
+            else if (record.FileName.EndsWith(".png", StringComparison.OrdinalIgnoreCase))
+            {
+                contentType = "image/png";
+            }
+            else
+            {
+                // Handle other file types or return an error
+                return Content("Preview is only available for PDF, JPG, JPEG, and PNG files.");
+            }
+
+            return File(record.FileData, contentType);
+        }
+
     }
-
+}
