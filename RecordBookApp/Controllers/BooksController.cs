@@ -1,14 +1,10 @@
-using System;
-using System.Collections.Generic;
-using System.Diagnostics;
-using System.Linq;
-using System.Net;
-using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Metadata.Internal;
 using RecordBookApp.Models;
+using System.Linq;
+using System.Threading.Tasks;
+using System.Collections.Generic;
+using Microsoft.AspNetCore.Http;
 
 namespace RecordBookApp.Controllers
 {
@@ -24,7 +20,7 @@ namespace RecordBookApp.Controllers
         public async Task<IActionResult> BookIdretrieval(int bookId)
         {
             HttpContext.Session.SetString("BookId", bookId.ToString());
-            return RedirectToAction("Index","Records");
+            return RedirectToAction("Index", "Records");
         }
 
         // GET: Books
@@ -33,16 +29,55 @@ namespace RecordBookApp.Controllers
             var userId = HttpContext.Session.GetString("UserId");
             if (userId == null)
             {
-                // Handle case where user is not logged in
                 return RedirectToAction("SignIn", "Users");
             }
 
             int parsedUserId = int.Parse(userId);
-            var books = await _context.Books
-                                      .Where(b => b.UserId == parsedUserId)
-                                      .ToListAsync();
-            return View(books);
+            var booksQuery = _context.Books.Where(b => b.UserId == parsedUserId);
+
+            var books = await booksQuery.ToListAsync();
+            var bookViewModels = new List<BookView>();
+
+            foreach (var book in books)
+            {
+                var cashInTotal = _context.Records
+                    .Where(r => r.BookId == book.BookId && r.Category.Type == "CashIn")
+                    .Sum(r => r.Amount);
+
+                var cashOutTotal = _context.Records
+                    .Where(r => r.BookId == book.BookId && r.Category.Type == "CashOut")
+                    .Sum(r => r.Amount);
+
+                var netBalance = cashInTotal - cashOutTotal;
+
+                // Get the latest record update time
+                var lastUpdatedRecord = _context.Records
+                    .Where(r => r.BookId == book.BookId)
+                    .OrderByDescending(r => r.Date).ThenByDescending(r => r.Time)
+                    .FirstOrDefault();
+
+                var updatedAt = lastUpdatedRecord != null ? (DateTime?)new DateTime(lastUpdatedRecord.Date.Year, lastUpdatedRecord.Date.Month, lastUpdatedRecord.Date.Day, lastUpdatedRecord.Time.Hour, lastUpdatedRecord.Time.Minute, lastUpdatedRecord.Time.Second) : null;
+
+                bookViewModels.Add(new BookView
+                {
+                    BookId = book.BookId,
+                    BookName = book.BookName,
+                    NetBalance = netBalance,
+                    CreatedAt = book.CreatedAt,
+                    UpdatedAt = updatedAt
+                });
+            }
+
+            if (Request.Headers["X-Requested-With"] == "XMLHttpRequest")
+            {
+                // If it's an AJAX request, return only the list of books as JSON
+                return Json(bookViewModels);
+            }
+
+            // Otherwise, render the full Index view with the list of books
+            return View(bookViewModels);
         }
+
 
 
         // GET: Books/Create
@@ -72,7 +107,8 @@ namespace RecordBookApp.Controllers
             var book = new Book
             {
                 BookName = bookView.BookName,
-                UserId = int.Parse(userId)
+                UserId = int.Parse(userId),
+                CreatedAt = DateTime.Now
             };
 
             if (ModelState.IsValid)
@@ -84,7 +120,6 @@ namespace RecordBookApp.Controllers
 
             return PartialView("_CreatePartial", bookView);
         }
-
 
 
         // GET: Books/Edit/5
@@ -103,14 +138,12 @@ namespace RecordBookApp.Controllers
                 BookName = book.BookName
             };
 
-            return View(viewModel); // Pass viewModel to the view
+            return View(viewModel);
         }
-
 
         // POST: Books/Edit/5
         [HttpPost]
         [ValidateAntiForgeryToken]
-        
         public async Task<IActionResult> Edit(int id, BookView inputModel)
         {
             var currentUserId = HttpContext.Session.GetString("UserId");
@@ -127,15 +160,14 @@ namespace RecordBookApp.Controllers
                 {
                     _context.Entry(book).State = EntityState.Detached;
 
-                    // Create a new Book object
                     var updatedBook = new Book
                     {
                         BookId = id,
                         BookName = inputModel.BookName,
-                        UserId = book.UserId // Retain the original UserId
+                        UserId = book.UserId,
+                        CreatedAt = book.CreatedAt // Preserve the original CreatedAt value
                     };
 
-                    // Update the database with the new Book object
                     _context.Update(updatedBook);
                     await _context.SaveChangesAsync();
                     return RedirectToAction(nameof(Index));
@@ -153,10 +185,8 @@ namespace RecordBookApp.Controllers
                 }
             }
 
-            // If ModelState is not valid, return to the view with the inputModel
             return View(inputModel);
         }
-
 
         // GET: Books/Delete/5
         public async Task<IActionResult> Delete(int? id)
@@ -174,22 +204,23 @@ namespace RecordBookApp.Controllers
                 return NotFound();
             }
 
-            return View(book);
+            return PartialView("_DeletePartial", book);
         }
 
         // POST: Books/Delete/5
-        [HttpPost, ActionName("Delete")]
+        [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> DeleteConfirmed(int id)
+        public async Task<IActionResult> DeleteConfirmed(int BookId)
         {
-            var book = await _context.Books.FindAsync(id);
+            var book = await _context.Books.FindAsync(BookId);
             if (book != null)
             {
                 _context.Books.Remove(book);
+                await _context.SaveChangesAsync();
+                return Json(new { success = true });
             }
 
-            await _context.SaveChangesAsync();
-            return RedirectToAction(nameof(Index));
+            return Json(new { success = false, errorMessage = "Failed to delete book." });
         }
 
         private bool BookExists(int id)

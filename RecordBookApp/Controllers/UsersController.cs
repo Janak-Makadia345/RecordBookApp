@@ -36,7 +36,7 @@ namespace RecordBookApp.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Create([Bind("UserId,Email,Password")] User user)
+        public async Task<IActionResult> Create([Bind("UserId,Username,Email,Password,ConfirmPassword")] User user)
         {
             if (_context.Users.Any(u => u.Email == user.Email))
             {
@@ -44,7 +44,32 @@ namespace RecordBookApp.Controllers
                 return View(user);
             }
 
+            if (_context.Users.Any(u => u.Username == user.Username))
+            {
+                ModelState.AddModelError("Username", "Username already in use.");
+                return View(user);
+            }
+
+            if(user.Password == null)
+            {
+                ModelState.AddModelError("Password", "Password field cannot be empty");
+                return View(user);
+            }
+
+            if (user.ConfirmPassword == null)
+            {
+                ModelState.AddModelError("ConfirmPassword", "Confirm Password field cannot be empty");
+                return View(user);
+            }
+
+            if (user.Password != user.ConfirmPassword)
+            {
+                ModelState.AddModelError("ConfirmPassword", "Passwords do not match. Please check & re-enter!");
+                return View(user);
+            }
+
             user.Password = HashPassword(user.Password);
+            user.ConfirmPassword = HashPassword(user.ConfirmPassword);
             user.EmailVerificationToken = GenerateEmailVerificationToken();
             user.IsEmailVerified = false;
 
@@ -94,8 +119,74 @@ namespace RecordBookApp.Controllers
                     var mailMessage = new MailMessage
                     {
                         From = new MailAddress(smtpSettings.Username),
-                        Subject = "Verify your email",
-                        Body = $"Please verify your email by clicking <a href='{callbackUrl}'>here</a>.",
+                        Subject = "Verify Your Email Address",
+                        Body = $@"
+                <html>
+                <head>
+                    <style>
+                        body {{
+                            font-family: Arial, sans-serif;
+                            background-color: #f4f4f4;
+                            margin: 0;
+                            padding: 0;
+                        }}
+                        .container {{
+                            max-width: 600px;
+                            margin: 0 auto;
+                            padding: 20px;
+                            background-color: #ffffff;
+                            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+                        }}
+                        .header {{
+                            text-align: center;
+                            padding: 10px 0;
+                            border-bottom: 1px solid #e4e4e4;
+                        }}
+                        .header h1 {{
+                            font-size: 24px;
+                            margin: 0;
+                        }}
+                        .content {{
+                            padding: 20px;
+                            text-align: center;
+                        }}
+                        .content p {{
+                            font-size: 16px;
+                            margin: 0 0 20px;
+                        }}
+                        .content a {{
+                            display: inline-block;
+                            padding: 10px 20px;
+                            font-size: 16px;
+                            color: #ffffff;
+                            background-color: #007bff;
+                            text-decoration: none;
+                            border-radius: 5px;
+                        }}
+                        .footer {{
+                            text-align: center;
+                            padding: 10px 0;
+                            border-top: 1px solid #e4e4e4;
+                            font-size: 14px;
+                            color: #888888;
+                        }}
+                    </style>
+                </head>
+                <body>
+                    <div class='container'>
+                        <div class='header'>
+                            <h1>Record Book App Email Verification</h1>
+                        </div>
+                        <div class='content'>
+                            <p>Thank you for registering! Please verify your email address by clicking the button below:</p>
+                            <a href='{callbackUrl}'>Verify Email</a>
+                        </div>
+                        <div class='footer'>
+                            <p>If you did not sign up for this account, you can ignore this email.</p>
+                        </div>
+                    </div>
+                </body>
+                </html>",
                         IsBodyHtml = true
                     };
                     mailMessage.To.Add(email);
@@ -120,6 +211,11 @@ namespace RecordBookApp.Controllers
         {
             var user = _context.Users.FirstOrDefault(u => u.EmailVerificationToken == token);
 
+            if (user == null)
+            {
+                return NotFound();
+            }
+
             user.IsEmailVerified = true;
             _context.Update(user);
             await _context.SaveChangesAsync();
@@ -134,18 +230,26 @@ namespace RecordBookApp.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> SignIn([Bind("Email,Password")] User model)
+        public async Task<IActionResult> SignIn([Bind("Username,Email,Password")] User model)
         {
-            var user = await _context.Users.FirstOrDefaultAsync(u => u.Email == model.Email);
-            if (user == null)
+            if (string.IsNullOrEmpty(model.Email) && string.IsNullOrEmpty(model.Username))
             {
-                ModelState.AddModelError("Error", "User not found. Please SignUp.");
+                ModelState.AddModelError("Error", "Please enter either an email address or a username.");
                 return View(model);
             }
 
-            if(user.IsEmailVerified == false)
+            var user = await _context.Users
+                .FirstOrDefaultAsync(u => u.Email == model.Email || u.Username == model.Username);
+
+            if (user == null)
             {
-                ModelState.AddModelError("Error", "User not verified. Please verify by clicking the link sent to Email.");
+                ModelState.AddModelError("Error", "User not found. Please sign up.");
+                return View(model);
+            }
+
+            if (user.IsEmailVerified == false)
+            {
+                ModelState.AddModelError("Error", "User not verified. Please verify by clicking the link sent to your email.");
                 return View(model);
             }
 
@@ -190,15 +294,14 @@ namespace RecordBookApp.Controllers
         // POST: Users/Edit/5
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Edit(int id, [Bind("UserId,Email,Password")] User user)
+        public async Task<IActionResult> Edit(int id, [Bind("UserId,Username,Email,Password")] User user)
         {
             if (id != user.UserId)
             {
                 return NotFound();
             }
 
-            if (ModelState.IsValid)
-            {
+            
                 try
                 {
                     user.Password = HashPassword(user.Password); // Re-hash the password before saving
@@ -217,8 +320,6 @@ namespace RecordBookApp.Controllers
                     }
                 }
                 return RedirectToAction(nameof(Index));
-            }
-            return View(user);
         }
 
         // GET: Users/Delete/5

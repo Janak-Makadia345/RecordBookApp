@@ -19,7 +19,6 @@ namespace RecordBookApp.Models
         public int PaymentId { get; set; }
         [ForeignKey("PaymentId")]
         public Payment Payment { get; set; }
-        public byte[]? FileData { get; set; }
         public string? FileName { get; set; }
     }
 }

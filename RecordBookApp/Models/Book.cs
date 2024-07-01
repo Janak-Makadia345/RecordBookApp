@@ -9,6 +9,8 @@ namespace RecordBookApp.Models
         [Key]
         public int BookId { get; set; }
 
+        public DateTime CreatedAt { get; set; }
+
         [Required]
         public string BookName { get; set; }
 

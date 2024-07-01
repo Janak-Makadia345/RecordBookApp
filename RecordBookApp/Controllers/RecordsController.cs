@@ -35,6 +35,13 @@ namespace RecordBookApp.Controllers
             }
 
             int parsedBookId = int.Parse(bookId);
+
+            // Fetch the BookName corresponding to the BookId
+            var bookName = await _context.Books
+                                         .Where(b => b.BookId == parsedBookId)
+                                         .Select(b => b.BookName)
+                                         .FirstOrDefaultAsync();
+
             var records = await applicationDbContext
                                       .Where(b => b.BookId == parsedBookId)
                                       .ToListAsync();
@@ -46,13 +53,15 @@ namespace RecordBookApp.Controllers
             // Calculate net balance
             var netBalance = totalCashIn - totalCashOut;
 
-            // Store the balances in ViewBag
+            // Store the balances and BookName in ViewBag
             ViewBag.TotalCashIn = totalCashIn;
             ViewBag.TotalCashOut = totalCashOut;
             ViewBag.NetBalance = netBalance;
+            ViewBag.BookName = bookName ?? "Book Not Found"; // Default value if bookName is null
 
             return View(records);
         }
+
 
         // GET: Records/Create
         public async Task<IActionResult> Create(string buttonClicked = null) // Optional buttonClicked parameter
@@ -90,22 +99,23 @@ namespace RecordBookApp.Controllers
         }
 
         // POST: Records/Create
+        // POST: Records/Create
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Create([Bind("Date,Time,Amount,CategoryId,PaymentId,File")] RecordView recordView, IFormFile file)
         {
             var retrievedBookId = int.Parse(HttpContext.Session.GetString("BookId"));
-
-            byte[] fileData = null;
             string fileName = null;
 
             if (file != null && file.Length > 0) // Check if a file was uploaded
             {
-                using (var ms = new MemoryStream())
+                string uploadsFolder = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "uploads");
+                fileName = Guid.NewGuid().ToString() + "_" + file.FileName;
+                string filePath = Path.Combine(uploadsFolder, fileName);
+
+                using (var fileStream = new FileStream(filePath, FileMode.Create))
                 {
-                    await file.CopyToAsync(ms);
-                    fileData = ms.ToArray();
-                    fileName = file.FileName;
+                    await file.CopyToAsync(fileStream);
                 }
             }
 
@@ -117,16 +127,14 @@ namespace RecordBookApp.Controllers
                 CategoryId = recordView.CategoryId,
                 PaymentId = recordView.PaymentId,
                 BookId = retrievedBookId,
-                FileName = fileName,
-                FileData = fileData
+                FileName = fileName // Save the file path or name in the database
             };
 
-  
-                _context.Add(record);
-                await _context.SaveChangesAsync();
-                return RedirectToAction(nameof(Index));
-       
+            _context.Add(record);
+            await _context.SaveChangesAsync();
+            return RedirectToAction(nameof(Index));
         }
+
 
 
         // GET: Records/Edit/5
@@ -185,16 +193,17 @@ namespace RecordBookApp.Controllers
                 return Forbid();
             }
 
-            byte[] fileData = record.FileData;
             string fileName = record.FileName;
 
             if (file != null && file.Length > 0) // Check if a new file was uploaded
             {
-                using (var ms = new MemoryStream())
+                string uploadsFolder = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "uploads");
+                fileName = Guid.NewGuid().ToString() + "_" + file.FileName;
+                string filePath = Path.Combine(uploadsFolder, fileName);
+
+                using (var fileStream = new FileStream(filePath, FileMode.Create))
                 {
-                    await file.CopyToAsync(ms);
-                    fileData = ms.ToArray();
-                    fileName = file.FileName;
+                    await file.CopyToAsync(fileStream);
                 }
             }
 
@@ -203,8 +212,7 @@ namespace RecordBookApp.Controllers
             record.Amount = recordView.Amount;
             record.CategoryId = recordView.CategoryId;
             record.PaymentId = recordView.PaymentId;
-            record.FileName = fileName;
-            record.FileData = fileData;
+            record.FileName = fileName; // Save the updated file path or name in the database
 
             try
             {
@@ -226,8 +234,6 @@ namespace RecordBookApp.Controllers
             await _context.SaveChangesAsync();
             return RedirectToAction(nameof(Index));
         }
-
-
 
         // GET: Records/Delete/5
         public async Task<IActionResult> Delete(int? id)
@@ -274,22 +280,29 @@ namespace RecordBookApp.Controllers
         public async Task<IActionResult> Download(int id)
         {
             var record = await _context.Records.FindAsync(id);
-            if (record == null || record.FileData == null)
+            if (record == null || string.IsNullOrEmpty(record.FileName))
             {
                 return NotFound();
             }
 
-            return File(record.FileData, "application/octet-stream", record.FileName);
+            string uploadsFolder = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "uploads");
+            string filePath = Path.Combine(uploadsFolder, record.FileName);
+
+            var fileBytes = await System.IO.File.ReadAllBytesAsync(filePath);
+            return File(fileBytes, "application/octet-stream", record.FileName);
         }
 
         // GET: Records/Preview/5
         public async Task<IActionResult> Preview(int id)
         {
             var record = await _context.Records.FindAsync(id);
-            if (record == null || record.FileData == null)
+            if (record == null || string.IsNullOrEmpty(record.FileName))
             {
                 return NotFound();
             }
+
+            string uploadsFolder = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "uploads");
+            string filePath = Path.Combine(uploadsFolder, record.FileName);
 
             string contentType;
             if (record.FileName.EndsWith(".pdf", StringComparison.OrdinalIgnoreCase))
@@ -307,12 +320,11 @@ namespace RecordBookApp.Controllers
             }
             else
             {
-                // Handle other file types or return an error
                 return Content("Preview is only available for PDF, JPG, JPEG, and PNG files.");
             }
 
-            return File(record.FileData, contentType);
+            var fileBytes = await System.IO.File.ReadAllBytesAsync(filePath);
+            return File(fileBytes, contentType);
         }
-
     }
 }
