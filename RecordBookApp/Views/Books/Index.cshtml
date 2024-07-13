@@ -11,7 +11,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>@ViewData["Title"]</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
-    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/5.1.3/css/bootstrap.min.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
     <script src="https://stackpath.bootstrapcdn.com/bootstrap/5.1.3/js/bootstrap.bundle.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
@@ -46,9 +45,10 @@
         }
 
         .search-container .form-control {
-            max-width: 300px; /* Example width, adjust as necessary */
+            max-width: 500px; /* Example width, adjust as necessary */
             margin-right: 10px; /* Adjust the gap between input and search icon */
             font-size: 16px; /* Adjust the font size of the placeholder */
+            width: 350px;
         }
 
         .search-container select {
@@ -115,12 +115,12 @@
         .book-item .book-actions .edit-btn {
             color: midnightblue;
             margin-right: 5px;
-            font-size: 17px;
+            font-size: 19px;
         }
 
         .book-item .book-actions .delete-btn {
             color: red;
-            font-size: 17px;
+            font-size: 19px;
         }
 
         .balance {
@@ -178,6 +178,11 @@
         .modal.show .modal-dialog-zoom {
             transform: scale(1); /* Scale up to 1 */
         }
+
+        .modal-custom-width {
+            max-width: 550px; /* Adjust as needed */
+        }
+
     </style>
 </head>
 <body>
@@ -208,7 +213,9 @@
         <h4>Janak Makadia's Business</h4>
         <div class="search-container d-flex justify-content-between align-items-center">
             <div class="d-flex">
-                <input type="text" class="form-control" placeholder="Search by book name..." style="width: 300px;">
+                <form id="searchForm">
+                    <input type="text" class="form-control" id="searchInput" placeholder="Search by book name... ">
+                </form>                
                 <select class="form-select">
                     <option selected>All</option>
                     <option value="1">Filter 1</option>
@@ -224,7 +231,7 @@
         <ul class="book-list">
             @foreach (var item in Model)
             {
-                <li class="book-item" data-book-id="@item.BookId">
+                <li class="book-item" data-book-id="@item.BookId" data-book-name="@item.BookName">
                     <div class="book-info">
                         <div class="d-flex align-items-center">
                             <i class="bi bi-journal-bookmark-fill" style="padding-right:12px;"></i>
@@ -256,10 +263,10 @@
  </div>
 
     <div class="modal" id="createBookModal" tabindex="-1" aria-labelledby="createBookModalLabel" aria-hidden="true">
-        <div class="modal-dialog modal-dialog-centered modal-dialog-zoom">
+        <div class="modal-dialog modal-dialog-centered modal-dialog-zoom modal-custom-width">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title" id="createBookModalLabel">Add New Book</h5>
+                    <h5 class="modal-title" id="createBookModalLabel"><b>Add New Book</b></h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
@@ -275,10 +282,10 @@
     </div>
 
     <div class="modal" id="deleteBookModal" tabindex="-1" aria-labelledby="deleteBookModalLabel" aria-hidden="true">
-        <div class="modal-dialog modal-dialog-centered modal-dialog-zoom">
+        <div class="modal-dialog modal-dialog-centered modal-dialog-zoom modal-custom-width">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title" id="deleteBookModalLabel">Delete Book</h5>
+                    <h5 class="modal-title" id="deleteBookModalLabel"><b>Delete Book</b></h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
@@ -288,7 +295,7 @@
                     <input type="hidden" id="deleteBookId" name="BookId" value="" />
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-danger" id="submitDeleteBookForm">Delete</button>
+                    <button type="button" class="btn btn-danger" id="submitDeleteBookForm"> <i class="bi bi-trash"></i>  Yes, Delete</button>
                 </div>
             </div>
         </div>
@@ -304,6 +311,13 @@
                         type: 'GET',
                         success: function (response) {
                             $('#createBookForm').html(response);
+                            $('#createBookModal').modal('show');
+
+                            // Set focus and cursor position at the beginning of #BookName input
+                            setTimeout(function () {
+                                $('#BookName').focus();
+                                $('#BookName')[0].setSelectionRange(0, 0);
+                            }, 0);
                         },
                         error: function () {
                             alert('Error loading form');
@@ -328,6 +342,8 @@
                                 }, 500);
                             } else {
                                 $('#createBookForm').html(response);
+                                var errorMessage = "Please provide a valid name for the book (e.g. Daily Expense, Bills etc.)!";
+                                $('#createBookForm .invalid-feedback').html(errorMessage);
                             }
                         },
                         error: function () {
@@ -347,6 +363,11 @@
                     }
                 });
 
+                $('#createBookModal').on('shown.bs.modal', function () {
+                    $('#BookName').focus();
+                    $('#BookName')[0].setSelectionRange(0, 0);
+                });
+
                 $(document).on('click', '.deleteBookButton', function () {
                     var bookId = $(this).closest('.book-item').data('book-id');
 
@@ -357,11 +378,16 @@
 
                     // Load the delete form via AJAX
                     $.ajax({
-                        url: '@Url.Action("Delete", "Books")',
+                        url: '@Url.Action("Delete", "Books")' + '/' + bookId,
                         type: 'GET',
-                        data: { id: bookId },
                         success: function (response) {
                             $('#deleteBookForm').html(response);
+                            $('#deleteBookModal').modal('show');
+
+                            setTimeout(function () {
+                                $('#confirmBookName').focus();
+                                $('#confirmBookName')[0].setSelectionRange(0, 0);
+                            }, 0);
                         },
                         error: function () {
                             alert('Error loading form');
@@ -369,32 +395,51 @@
                     });
                 });
 
+
                 function submitDeleteBookForm() {
                     var form = $('#deleteBookForm');
                     var formData = form.serialize() + '&BookId=' + $('#deleteBookId').val();
 
-                    $.ajax({
-                        url: '@Url.Action("DeleteConfirmed", "Books")',
-                        type: 'POST',
-                        data: formData,
-                        success: function (response) {
-                            if (response.success) {
-                                $('#deleteBookModal').modal('hide');
-                                toastr.success('Book deleted successfully!', 'Success', {
-                                    positionClass: 'toast-bottom-right'
-                                });
-                                setTimeout(function () {
-                                    location.reload();
-                                }, 500);
-                            } else {
-                                $('#deleteBookForm').html(response);
+                    var confirmBookName = $('#confirmBookName').val().trim();
+                    var actualBookName = $('.book-item[data-book-id="' + $('#deleteBookId').val() + '"]').data('book-name');
+
+                    console.log("FormData:", formData); // Debugging
+
+                    console.log(actualBookName);
+                    console.log(confirmBookName);
+
+                    if (confirmBookName === actualBookName) {
+                        $.ajax({
+                            url: '@Url.Action("DeleteBook", "Books")',
+                            type: 'POST',
+                            data: formData,
+                            headers: {
+                                'RequestVerificationToken': $('input[name="__RequestVerificationToken"]').val()
+                            },
+                            success: function (response) {
+                                if (response.success) {
+                                    $('#deleteBookModal').modal('hide');
+                                    toastr.success('Book deleted successfully!', 'Success', {
+                                        positionClass: 'toast-bottom-right'
+                                    });
+                                    setTimeout(function () {
+                                        location.reload();
+                                    }, 500);
+                                } else {
+                                    $('#deleteBookForm').html(response);
+                                }
+                            },
+                            error: function (xhr, status, error) {
+                                console.error(xhr.responseText); // Log full error message
+                                alert('Error submitting form: ' + error);
                             }
-                        },
-                        error: function () {
-                            alert('Error submitting form');
-                        }
-                    });
+                        });
+                    } else {
+                        var errorMessage = "Book Name doesn't match. Please type " + actualBookName + " in the required field to confirm.";
+                        $('#confirmBookNameError').text(errorMessage).addClass('error-message');
+                    }
                 }
+
 
                 $('#submitDeleteBookForm').click(function () {
                     submitDeleteBookForm();
@@ -407,11 +452,91 @@
                     }
                 });
 
-                $('.book-item').dblclick(function () {
-                    var bookId = $(this).data('book-id');
-                    window.location.href = '@Url.Action("BookIdretrieval", "Books")' + '?bookId=' + bookId;
+                $('#deleteBookModal').on('shown.bs.modal', function () {
+                    $('#confirmBookName').focus();
+                    $('#confirmBookName')[0].setSelectionRange(0, 0);
                 });
 
+                // Function to handle search filtering
+                var timeoutId = null;
+                $('#searchInput').keyup(function () {
+                    clearTimeout(timeoutId); // Clear previous timeout
+                    timeoutId = setTimeout(function () {
+                        var searchString = $('#searchInput').val().trim();
+
+                        $.ajax({
+                            url: '@Url.Action("Index", "Books")',
+                            type: 'GET',
+                            data: { searchString: searchString },
+                            dataType: 'json', // Specify JSON data type
+                            success: function (response) {
+                                // Clear previous book list content
+                                $('.book-list').empty();
+
+                                // Check if response is not empty
+                                if (response.length > 0) {
+                                    // Iterate through each book in response and append to book list
+                                    $.each(response, function (index, book) {
+                                        var createdAt = moment(book.createdAt);
+                                        var updatedAt = book.updatedAt ? moment(book.updatedAt) : null;
+                                        var now = moment();
+                                        var relativeTime;
+
+                                        if (updatedAt && updatedAt.isAfter(createdAt)) {
+                                            relativeTime = updatedAt.fromNow();
+                                        } else {
+                                            relativeTime = createdAt.fromNow();
+                                        }
+
+                                        // Construct the HTML for the book item with relative time
+                                        var bookItem = `
+                                                <li class="book-item" data-book-id="${book.bookId}" data-book-name="${book.bookName}">
+                                                    <div class="book-info">
+                                                        <div class="d-flex align-items-center">
+                                                            <i class="bi bi-journal-bookmark-fill" style="padding-right:12px;"></i>
+                                                            <div>
+                                                                <span><b>${book.bookName}</b></span>
+                                                                <div class="text-muted created-updated-time" data-created-at="${book.createdAt}" data-updated-at="${book.updatedAt}">
+                                                                    ${book.updatedAt ? 'Updated ' : 'Created '} ${relativeTime}
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                    <div class="d-flex align-items-center">
+                                                        <div class="book-actions">
+                                                            <button class="btn btn-sm edit-btn" data-bs-toggle="modal" data-bs-target="#editBookModal">
+                                                                <i class="fas fa-edit"></i>
+                                                            </button>
+                                                            <button class="btn btn-sm delete-btn deleteBookButton" data-bs-toggle="modal" data-bs-target="#deleteBookModal">
+                                                                <i class="fas fa-trash-alt"></i>
+                                                            </button>
+                                                        </div>
+                                                        <div class="balance ${book.netBalance >= 0 ? 'positive' : 'negative'}">
+                                                            ${book.netBalance.toFixed(2)}
+                                                        </div>
+                                                    </div>
+                                                </li>`;
+
+                                        // Append the book item HTML to the book-list
+                                        $('.book-list').append(bookItem);
+                                    });
+                                } else {
+                                    // Display message if no books found
+                                    $('.book-list').html('<div class="text-center">No books found.</div>');
+                                }
+
+                            },
+                            error: function () {
+                                alert('Error searching books');
+                            }
+                        });
+                    }, 0); // Delay in milliseconds before making the AJAX call
+                });
+
+                $('.book-item').dblclick(function () {
+                    var bookId = $(this).data('book-id');
+                    window.location.href = '@Url.Action("BookIdretrieval", "Books")' + '/' + bookId;
+                });
 
                 $('.book-item').hover(
                     function () {

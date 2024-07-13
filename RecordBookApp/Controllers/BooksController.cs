@@ -8,6 +8,7 @@ using Microsoft.AspNetCore.Http;
 
 namespace RecordBookApp.Controllers
 {
+    [Route("Books")]
     public class BooksController : Controller
     {
         private readonly ApplicationDbContext _context;
@@ -17,6 +18,7 @@ namespace RecordBookApp.Controllers
             _context = context;
         }
 
+        [HttpGet("BookIdretrieval/{bookId}")]
         public async Task<IActionResult> BookIdretrieval(int bookId)
         {
             HttpContext.Session.SetString("BookId", bookId.ToString());
@@ -24,7 +26,8 @@ namespace RecordBookApp.Controllers
         }
 
         // GET: Books
-        public async Task<IActionResult> Index()
+        [HttpGet("")]
+        public async Task<IActionResult> Index(string searchString)
         {
             var userId = HttpContext.Session.GetString("UserId");
             if (userId == null)
@@ -34,6 +37,12 @@ namespace RecordBookApp.Controllers
 
             int parsedUserId = int.Parse(userId);
             var booksQuery = _context.Books.Where(b => b.UserId == parsedUserId);
+
+            if (!string.IsNullOrEmpty(searchString))
+            {
+                searchString = searchString.Trim().ToLower();
+                booksQuery = booksQuery.Where(b => b.BookName.ToLower().Contains(searchString));
+            }
 
             var books = await booksQuery.ToListAsync();
             var bookViewModels = new List<BookView>();
@@ -50,7 +59,6 @@ namespace RecordBookApp.Controllers
 
                 var netBalance = cashInTotal - cashOutTotal;
 
-                // Get the latest record update time
                 var lastUpdatedRecord = _context.Records
                     .Where(r => r.BookId == book.BookId)
                     .OrderByDescending(r => r.Date).ThenByDescending(r => r.Time)
@@ -70,24 +78,20 @@ namespace RecordBookApp.Controllers
 
             if (Request.Headers["X-Requested-With"] == "XMLHttpRequest")
             {
-                // If it's an AJAX request, return only the list of books as JSON
                 return Json(bookViewModels);
             }
 
-            // Otherwise, render the full Index view with the list of books
             return View(bookViewModels);
         }
 
-
-
         // GET: Books/Create
-        [HttpGet]
+        [HttpGet("Create")]
         public IActionResult Create()
         {
             return PartialView("_CreatePartial");
         }
 
-        [HttpPost]
+        [HttpPost("Create")]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Create(BookView bookView)
         {
@@ -121,8 +125,8 @@ namespace RecordBookApp.Controllers
             return PartialView("_CreatePartial", bookView);
         }
 
-
         // GET: Books/Edit/5
+        [HttpGet("Edit/{id}")]
         public IActionResult Edit(int id)
         {
             var currentUserId = HttpContext.Session.GetString("UserId");
@@ -142,7 +146,7 @@ namespace RecordBookApp.Controllers
         }
 
         // POST: Books/Edit/5
-        [HttpPost]
+        [HttpPost("Edit/{id}")]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Edit(int id, BookView inputModel)
         {
@@ -189,6 +193,7 @@ namespace RecordBookApp.Controllers
         }
 
         // GET: Books/Delete/5
+        [HttpGet("Delete/{id}")]
         public async Task<IActionResult> Delete(int? id)
         {
             if (id == null)
@@ -208,20 +213,28 @@ namespace RecordBookApp.Controllers
         }
 
         // POST: Books/Delete/5
-        [HttpPost]
+        [HttpPost("DeleteBook")]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> DeleteConfirmed(int BookId)
+        public async Task<IActionResult> DeleteBookConfirmed(int BookId)
         {
             var book = await _context.Books.FindAsync(BookId);
-            if (book != null)
+            if (book == null)
+            {
+                return Json(new { success = false, errorMessage = "Book not found." });
+            }
+
+            try
             {
                 _context.Books.Remove(book);
                 await _context.SaveChangesAsync();
                 return Json(new { success = true });
             }
-
-            return Json(new { success = false, errorMessage = "Failed to delete book." });
+            catch (Exception ex)
+            {
+                return Json(new { success = false, errorMessage = ex.Message });
+            }
         }
+
 
         private bool BookExists(int id)
         {

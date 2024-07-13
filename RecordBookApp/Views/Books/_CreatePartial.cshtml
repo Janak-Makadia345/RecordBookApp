@@ -4,9 +4,9 @@
     <form asp-action="Create" method="post" id="createBookForm">
         <div asp-validation-summary="ModelOnly" class="text-danger"></div>
         <div class="mb-3">
-            <label asp-for="BookName" class="form-label">Enter Book Name</label>
-            <input asp-for="BookName" class="form-control" />
-            <span asp-validation-for="BookName" class="invalid-input"></span>
+            <label asp-for="BookName" class="form-label"><h6>Enter Book Name:</h6></label>
+            <input asp-for="BookName" class="form-control" placeholder="e.g. Daily Expense" />
+            <span asp-validation-for="BookName" class="invalid-feedback d-block" style="font-size: small; margin-top: 10px;"></span>
         </div>
     </form>
 </div>

@@ -13,5 +13,9 @@ namespace RecordBookApp.Models
         public DateTime CreatedAt { get; set; }
         public DateTime? UpdatedAt { get; set; }
     }
+    public class DeleteModel
+    {
+        public int BookId { get; set;}
+    }
 }
 
