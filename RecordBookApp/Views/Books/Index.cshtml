@@ -115,12 +115,12 @@
         .book-item .book-actions .edit-btn {
             color: midnightblue;
             margin-right: 5px;
-            font-size: 19px;
+            font-size: 17px;
         }
 
         .book-item .book-actions .delete-btn {
             color: red;
-            font-size: 19px;
+            font-size: 17px;
         }
 
         .balance {
@@ -246,7 +246,7 @@
                     <div class="d-flex align-items-center">
                         <div class="book-actions">
                             <!-- Use data-bs-toggle and data-bs-target for modal trigger -->
-                            <button class="btn btn-sm edit-btn" data-bs-toggle="modal" data-bs-target="#editBookModal">
+                            <button class="btn btn-sm edit-btn editBookButton" data-bs-toggle="modal" data-bs-target="#editBookModal">
                                 <i class="fas fa-edit"></i>
                             </button>
                             <button class="btn btn-sm delete-btn deleteBookButton" data-bs-toggle="modal" data-bs-target="#deleteBookModal">
@@ -276,6 +276,26 @@
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-primary" id="submitCreateBookForm">Create</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal" id="editBookModal" tabindex="-1" aria-labelledby="editBookModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-dialog-zoom modal-custom-width">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="editBookModalLabel"><b>Rename Book</b></h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="editBookForm">
+                        <!-- Form content will be loaded via AJAX -->
+                    </form>
+                    <input type="hidden" id="editBookId" name="BookId" value="" />
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-primary" id="submitEditBookForm">Save</button>
                 </div>
             </div>
         </div>
@@ -344,6 +364,10 @@
                                 $('#createBookForm').html(response);
                                 var errorMessage = "Please provide a valid name for the book (e.g. Daily Expense, Bills etc.)!";
                                 $('#createBookForm .invalid-feedback').html(errorMessage);
+                                $('#createBookForm .invalid-feedback').css({
+                                    'background-color': '#f8d7da',
+                                    'padding': '10px'
+                                });
                             }
                         },
                         error: function () {
@@ -366,6 +390,87 @@
                 $('#createBookModal').on('shown.bs.modal', function () {
                     $('#BookName').focus();
                     $('#BookName')[0].setSelectionRange(0, 0);
+                });
+
+                $(document).on('click', '.editBookButton', function () {
+                    var bookId = $(this).closest('.book-item').data('book-id');
+
+                    $('#editBookId').val(bookId);
+                    $('#editBookModal').modal('show');
+
+                    $.ajax({
+                        url: '@Url.Action("Edit", "Books")' + '/' + bookId,
+                        type: 'GET',
+                        success: function (response) {
+                            $('#editBookForm').html(response);
+                            $('#editBookModal').modal('show');
+
+                            setTimeout(function () {
+                                var input = $('#BookName');
+                                var len = input.val().length;
+                                input.focus().get(0).setSelectionRange(len, len);
+                            }, 0);
+                        },
+                        error: function () {
+                            alert('Error loading form');
+                        }
+                    });
+                });
+              
+                // Function to submit edit book form via AJAX
+                function submitEditBookForm() {
+                    var form = $('#editBookForm');
+                    var formData = form.serialize();
+
+                    $.ajax({
+                        url: '/Books/Edit/' + $('#editBookId').val(),
+                        type: 'POST',
+                        data: formData,
+                        headers: {
+                            'RequestVerificationToken': $('input[name="__RequestVerificationToken"]').val()
+                        },
+                        success: function (response) {
+                            if (response.success) {
+                                $('#editBookModal').modal('hide');
+                                toastr.success('Book updated successfully!', 'Success', {
+                                    positionClass: 'toast-bottom-right'
+                                });
+                                setTimeout(function () {
+                                    location.reload();
+                                }, 500);
+                            } else {
+                                $('#editBookForm').html(response); // Display validation errors or other messages
+                                var errorMessage = "Please provide a valid name for the book (e.g. Daily Expense, Bills etc.)!";
+                                $('#editBookForm .invalid-feedback').html(errorMessage);
+                                $('#editBookForm .invalid-feedback').css({
+                                    'background-color': '#f8d7da',
+                                    'padding': '10px'
+                                });
+                            }
+                        },
+                        error: function () {
+                            alert('Error submitting form');
+                        }
+                    });
+                }
+
+                // Submit edit form
+                $('#submitEditBookForm').click(function () {
+                    submitEditBookForm();
+                });
+
+                // Handle Enter key press on modal form
+                $('#editBookModal').on('keypress', function (e) {
+                    if (e.which == 13) {
+                        e.preventDefault();
+                        submitEditBookForm();
+                    }
+                });
+
+                $('#editBookModal').on('shown.bs.modal', function () {
+                    var input = $('#BookName');
+                    var len = input.val().length;
+                    input.focus().get(0).setSelectionRange(len, len);
                 });
 
                 $(document).on('click', '.deleteBookButton', function () {
@@ -403,11 +508,6 @@
                     var confirmBookName = $('#confirmBookName').val().trim();
                     var actualBookName = $('.book-item[data-book-id="' + $('#deleteBookId').val() + '"]').data('book-name');
 
-                    console.log("FormData:", formData); // Debugging
-
-                    console.log(actualBookName);
-                    console.log(confirmBookName);
-
                     if (confirmBookName === actualBookName) {
                         $.ajax({
                             url: '@Url.Action("DeleteBook", "Books")',
@@ -430,13 +530,15 @@
                                 }
                             },
                             error: function (xhr, status, error) {
-                                console.error(xhr.responseText); // Log full error message
+                                console.error(xhr.responseText); 
                                 alert('Error submitting form: ' + error);
                             }
                         });
                     } else {
                         var errorMessage = "Book Name doesn't match. Please type " + actualBookName + " in the required field to confirm.";
                         $('#confirmBookNameError').text(errorMessage).addClass('error-message');
+                        $('#confirmBookName').blur();
+
                     }
                 }
 

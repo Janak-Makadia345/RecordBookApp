@@ -142,10 +142,9 @@ namespace RecordBookApp.Controllers
                 BookName = book.BookName
             };
 
-            return View(viewModel);
+            return PartialView("_EditPartial", viewModel); // Return partial view for AJAX loading
         }
 
-        // POST: Books/Edit/5
         [HttpPost("Edit/{id}")]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Edit(int id, BookView inputModel)
@@ -174,23 +173,17 @@ namespace RecordBookApp.Controllers
 
                     _context.Update(updatedBook);
                     await _context.SaveChangesAsync();
-                    return RedirectToAction(nameof(Index));
+                    return Json(new { success = true });
                 }
-                catch (DbUpdateConcurrencyException)
+                catch (Exception ex)
                 {
-                    if (!BookExists(book.BookId))
-                    {
-                        return NotFound();
-                    }
-                    else
-                    {
-                        throw;
-                    }
+                    return Json(new { success = false, errorMessage = ex.Message });
                 }
             }
 
-            return View(inputModel);
+            return PartialView("_EditPartial", inputModel); // Return partial view with validation errors
         }
+
 
         // GET: Books/Delete/5
         [HttpGet("Delete/{id}")]
