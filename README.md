@@ -1,4 +1,4 @@
-Cashbook Application Development - Summer Internship 2024
+#Cashbook Application Development - Summer Internship 2024
 Welcome to the Cashbook Application Development project. This document provides a detailed, day-by-day account of the development process from May 20, 2024, to July 2, 2024.
 
 Week 1: May 20 - May 26
