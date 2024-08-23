@@ -131,7 +131,7 @@
                             <input type="checkbox"> <!-- Checkbox column -->
                         </td>
                         <td>@item.Date.ToString("yyyy-MM-dd")</td>
-                        <td>@item.Date.ToString("HH:mm")</td> <!-- Display time below date -->
+                        <td>@item.Time.ToString("HH:mm")</td> 
                         <td>@Html.DisplayFor(modelItem => item.Category.Name)</td>
                         <td>@Html.DisplayFor(modelItem => item.Payment.Type)</td>
                         <td>

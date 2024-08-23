@@ -83,6 +83,18 @@
             font-size: 18px;
         }
 
+        .dropdown-menu {
+            font-size: 0.9rem; /* Smaller font size for dropdown */
+            font-weight: bold; /* Bold text for dropdown */
+        }
+
+        .dropdown-item {
+            padding: 12px 20px; /* More spacing around each option */
+        }
+
+        .dropdown-item i {
+            margin-right: 8px;
+        }
     </style>
 </head>
 <body>
@@ -110,18 +122,37 @@
                         </li>
                     </ul>
                     <ul class="navbar-nav">
-                        <li class="nav-item">
-                            <a class="nav-link" href="#"><i class="bi bi-envelope-fill"></i> Notifications</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link" href="#"><i class="bi bi-person-fill"></i> Profile</a>
-                        </li>
+                        @if (Context.Session.GetString("FullName") != null)
+                        {
+                            <li class="nav-item dropdown">
+                                <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false" style="color: midnightblue;">
+                                    <i class="bi bi-person-fill"></i> @Context.Session.GetString("FullName")
+                                </a>
+                                <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="navbarDropdown">
+                                    <li><a class="dropdown-item" asp-area="" asp-controller="Users" asp-action="Index"><i class="bi bi-person-fill"></i> View Profile</a></li>
+                                    <li><a class="dropdown-item" asp-area="" asp-controller="Users" asp-action="ChangePassword"><i class="bi bi-lock-fill"></i> Change Password</a></li>
+                                    <li><a class="dropdown-item" asp-area="" asp-controller="Users" asp-action="HelpSupport"><i class="bi bi-question-circle-fill"></i> Help and Support</a></li>
+                                    <li><hr class="dropdown-divider"></li>
+                                    <li>
+                                        <form method="post" asp-controller="Users" asp-action="Logout" id="logoutForm">
+                                            <button type="submit" class="dropdown-item"><i class="bi bi-box-arrow-left"></i>Logout</button>
+                                        </form>
+                                    </li>
+                                </ul>
+                            </li>
+                        }
+                        else
+                        {
+                            <li class="nav-item">
+                                <a class="nav-link" asp-area="" asp-controller="Users" asp-action="SignIn"><i class="bi bi-person-fill"></i> Profile</a>
+                            </li>
+                        }
                     </ul>
                 </div>
             </div>
         </nav>
     </header>
-    
+
     <div class="container content">
         <main role="main" class="pb-3">
             @RenderBody()

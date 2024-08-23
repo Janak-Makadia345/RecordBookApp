@@ -68,7 +68,7 @@ namespace RecordBookApp.Controllers
         {
             RecordView recordView = new RecordView()
             {
-                Date = DateTime.Now,
+                Date = DateTime.Now.Date,
                 Time = DateTime.Now
             };
 
@@ -98,7 +98,6 @@ namespace RecordBookApp.Controllers
             return View(recordView);
         }
 
-        // POST: Records/Create
         // POST: Records/Create
         [HttpPost]
         [ValidateAntiForgeryToken]

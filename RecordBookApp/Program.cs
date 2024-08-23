@@ -15,6 +15,8 @@ builder.Services.AddControllersWithViews();
 builder.Services.AddSession(options =>
 {
     options.IdleTimeout = TimeSpan.FromMinutes(30); // Set session timeout (optional)
+    options.Cookie.HttpOnly = true;
+    options.Cookie.IsEssential = true;
 });
 
 // Add HttpContextAccessor
@@ -46,6 +48,19 @@ app.UseStaticFiles();
 app.UseSession(); // Add session middleware before UseRouting and UseAuthorization
 
 app.UseRouting();
+
+app.Use(async (context, next) =>
+{
+    await next();
+
+    // Prevent caching of authenticated pages
+    if (context.Response.StatusCode == 200 && context.User.Identity.IsAuthenticated)
+    {
+        context.Response.Headers["Cache-Control"] = "no-cache, no-store, must-revalidate";
+        context.Response.Headers["Pragma"] = "no-cache";
+        context.Response.Headers["Expires"] = "0";
+    }
+});
 
 app.UseAuthentication(); // Add authentication middleware
 app.UseAuthorization();

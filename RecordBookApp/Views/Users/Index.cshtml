@@ -1,41 +1,203 @@
 @model IEnumerable<RecordBookApp.Models.User>
 
 @{
-    ViewData["Title"] = "Index";
+    ViewData["Title"] = "User Profile";
 }
 
-<h1>Index</h1>
+<style>
+    .profile-box {
+        max-width: 600px;
+        margin: 0 auto;
+        margin-top: 75px;
+    }
 
-<p>
-    <a asp-action="Create">Create New</a>
-</p>
-<table class="table">
-    <thead>
-        <tr>
-            <th>
-                @Html.DisplayNameFor(model => model.Email)
-            </th>
-            <th>
-                @Html.DisplayNameFor(model => model.Password)
-            </th>
-            <th></th>
-        </tr>
-    </thead>
-    <tbody>
-@foreach (var item in Model) {
-        <tr>
-            <td>
-                @Html.DisplayFor(modelItem => item.Email)
-            </td>
-            <td>
-                @Html.DisplayFor(modelItem => item.Password)
-            </td>
-            <td>
-                <a asp-action="Edit" asp-route-id="@item.UserId">Edit</a> |
-                <a asp-action="Details" asp-route-id="@item.UserId">Details</a> |
-                <a asp-action="Delete" asp-route-id="@item.UserId">Delete</a>
-            </td>
-        </tr>
+    .lighter-green {
+        background-color: #f0f8f2;
+        padding: 15px;
+    }
+
+    h5 {
+        margin-bottom: 12px;
+    }
+
+    .small-text {
+        font-size: smaller;
+        margin-top: 4px;
+    }
+
+    .notifications-section {
+        margin-top: 8px;
+    }
+
+    /* Modal adjustments */
+    .modal-dialog-zoom {
+        transform: scale(0.5);
+        transition: transform 0.1s ease-out;
+    }
+
+    .modal.show .modal-dialog-zoom {
+        transform: scale(1);
+    }
+
+    .modal-custom-width {
+        max-width: 600px; /* Adjust as needed */
+    }
+
+    .modal-content {
+        width: 100%;
+        height: auto;
+        max-height: 80vh;
+        border-radius: 4px;
+    }
+
+    .modal-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        border-bottom: 1px solid #e9ecef;
+        border-top-left-radius: 4px;
+        border-top-right-radius: 4px;
+    }
+
+    .modal-body {
+        position: relative;
+        flex: 1 1 auto;
+        margin: 0;
+        padding: 8px;
+    }
+
+    .modal-footer {
+        display: flex;
+        align-items: center;
+        justify-content: flex-end;
+        border-top: 1px solid #e9ecef;
+    }
+</style>
+
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            @foreach (var user in Model)
+            {
+                <div class="card mb-3 profile-box">
+                    <div class="card-body">
+                        <h6 style="font-size: small">Name</h6>
+                        <h4><b>@user.FullName</b></h4>
+                        <p class="card-text">@user.Email</p>
+
+                        <div class="alert alert-success lighter-green" role="alert">
+                            <i class="bi bi-patch-check-fill" style="padding-right:5px;"></i>
+                            <strong>Verified Email ID</strong>
+                            <p class="mb-0" style="padding-left: 25px; font-size: small">Use this Email ID to log in to the web.cashbook.in on your laptop/desktop</p>
+                        </div>
+
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <div>
+                                <a class="btn btn-primary" asp-action="Edit" asp-route-id="@user.UserId">
+                                    <i class="fa fa-pencil"></i> Edit Profile
+                                </a>
+                                <form asp-action="Logout" method="post" class="d-inline">
+                                    <button type="submit" class="btn btn-secondary">
+                                        <i class="fa fa-sign-out"></i> Logout
+                                    </button>
+                                </form>
+                            </div>
+                            <button class="btn btn-danger delete-account-btn">
+                                <i class="fa fa-trash"></i> Delete Account
+                            </button>
+                        </div>
+
+                        <hr>
+
+                        <h6>Preferences</h6>
+
+                        <div class="d-flex justify-content-between align-items-center notifications-section">
+                            <p><b>Notifications</b></p>
+                            <label class="custom-control custom-switch">
+                                <input type="checkbox" class="custom-control-input">
+                                <span class="custom-control-label"></span>
+                            </label>
+                        </div>
+                        <p class="small-text" style="margin-top: -8px;">Get notified for entries from group books.</p>
+                    </div>
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+<!-- Modal HTML for Delete User -->
+<div class="modal" id="deleteUserModal" tabindex="-1" aria-labelledby="deleteUserModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-dialog-zoom modal-custom-width">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="deleteUserModalLabel">Delete Account</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <!-- Modal body content will be loaded here dynamically -->
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-danger" id="confirmDelete">Delete</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        $(document).ready(function () {
+            $('.delete-account-btn').on('click', function () {
+                $.ajax({
+                    url: '@Url.Action("Delete", "Users")',
+                    method: 'GET',
+                    success: function (result) {
+                        $('#deleteUserModal .modal-body').html(result);
+                        $('#deleteUserModal').modal('show');
+
+                        setTimeout(function () {
+                            $('#password').focus();
+                            $('#password')[0].setSelectionRange(0, 0);
+                        }, 0);
+                    }
+                });
+            });
+
+            $('#confirmDelete').on('click', function () {
+                $('#deleteUserForm').submit();
+            });
+
+            $(document).on('submit', '#deleteUserForm', function (e) {
+                e.preventDefault();
+                var form = $(this);
+                $.ajax({
+                    url: '@Url.Action("DeleteConfirmed", "Users")',
+                    method: 'POST',
+                    data: form.serialize(),
+                    success: function (response) {
+                        if (response.success) {
+                            toastr.success('User deleted successfully! Redirecting to Sign-In page...', 'Success', {
+                                positionClass: 'toast-bottom-right'
+                            });
+                            setTimeout(function () {
+                                window.location.href = '@Url.Action("SignIn", "Users")';
+                            }, 500);
+                            // Clear browser history to prevent navigation back to deleted pages
+                            window.history.pushState(null, null, window.location.href);
+                            window.onpopstate = function () {
+                                window.location.href = '@Url.Action("SignIn", "Users")';
+                            };
+                        } else {
+                            $('#error-message').text(response.message);
+                        }
+                    }
+                });
+            });
+
+            $('#deleteUserModal').on('shown.bs.modal', function () {
+                $('#password').focus();
+                $('#password')[0].setSelectionRange(0, 0);
+            });
+        });
+    </script>
 }
-    </tbody>
-</table>

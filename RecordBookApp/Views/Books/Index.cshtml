@@ -39,7 +39,7 @@
         .search-container {
             align-items: center;
             justify-content: space-between; /* Ensure space between search and add new book */
-            margin-bottom: 20px;
+            margin-bottom: 25px;
             max-width: 100%;
             margin-top: 20px;
         }
@@ -47,19 +47,38 @@
         .search-container .form-control {
             max-width: 500px; /* Example width, adjust as necessary */
             margin-right: 10px; /* Adjust the gap between input and search icon */
-            font-size: 16px; /* Adjust the font size of the placeholder */
+            font-size: 14px; /* Adjust the font size of the placeholder */
             width: 350px;
         }
 
         .search-container select {
             margin-left: 10px; /* Adjust the gap between search input and filter */
-            max-width: 100px; /* Example width, adjust as necessary */
-            font-size: 16px; /* Adjust the font size of the placeholder */
+            max-width: 500px; /* Example width, adjust as necessary */
+            font-size: 14px; /* Adjust the font size of the placeholder */
+            width: 350px;
         }
 
         .search-container button {
             padding: 6px 10px; /* Example padding, adjust as necessary */
             width:200px;
+        }
+
+        .no-books-found {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+        }
+
+        .no-books-icon {
+            margin-bottom: 20px;
+        }
+
+        .no-books-message {
+            font-size: 24px;
+            font-weight: bold;
+            color: #6c757d;
         }
 
         .book-list {
@@ -86,6 +105,8 @@
         .book-item .book-info {
             display: flex;
             align-items: center;
+            margin-bottom: 3px;
+            margin-top: 3px;
         }
 
         .book-item .book-info i {
@@ -94,13 +115,12 @@
         }
 
         .book-item .book-info span {
-            font-size: 16px;
+            font-size: 15px;
         }
 
         .book-item .book-info .text-muted {
-            font-size: small;
+            font-size: 12px;
         }
-
 
         .book-item .book-actions {
             display: none;
@@ -166,8 +186,9 @@
             margin-right: 10px;
         }
 
-        h4 {
+        h5 {
             font-weight: bolder;
+            font-size: 22px;
         }
 
         .modal-dialog-zoom {
@@ -181,6 +202,27 @@
 
         .modal-custom-width {
             max-width: 550px; /* Adjust as needed */
+        }
+
+        .new-books-section .d-flex.align-items-center {
+            align-items: center;
+        }
+
+        .book-name-box {
+            background-color: #f0f8ff;
+            font-size: 0.9rem;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50px; /* For rounded corners on left and right sides */
+            padding-left: 15px;
+            padding-right: 15px;
+            padding-top: 10px;
+            padding-bottom: 10px;
+            border: 1px solid #ADD8E6;
+        }
+
+        .gap-2 {
+            gap: 0.5rem;
         }
 
     </style>
@@ -210,57 +252,96 @@
     </div>
 
     <div class="container main-content">
-        <h4>Janak Makadia's Business</h4>
+        <h5><i class="bi bi-briefcase-fill" style="padding-right: 8px;"></i> @ViewData["FullName"]'s Business</h5>
         <div class="search-container d-flex justify-content-between align-items-center">
             <div class="d-flex">
                 <form id="searchForm">
                     <input type="text" class="form-control" id="searchInput" placeholder="Search by book name... ">
-                </form>                
-                <select class="form-select">
-                    <option selected>All</option>
-                    <option value="1">Filter 1</option>
-                    <option value="2">Filter 2</option>
-                    <option value="3">Filter 3</option>
-                </select>
+                </form>
+                <div class="d-flex align-items-center">
+                    <select class="form-select ms-2" id="sortBySelect">
+                        <option value="Name">Sort by: Name (A to Z)</option>
+                        <option value="NetBalance">Sort by: Net Balance (High to Low)</option>
+                        <option value="NetBalanceAsc">Sort by: Net Balance (Low to High)</option>
+                        <option value="CreatedAt">Sort by: Created At</option>
+                        <option value="UpdatedAt">Sort by: Updated At</option>
+                    </select>
+                </div>
             </div>
             <button id="createBookButton" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createBookModal">
-                <i class="fas fa-plus"></i> Add New Book
+                <i class="fas fa-plus" style="padding-right:8px;"></i> Add New Book
             </button>
         </div>
 
         <ul class="book-list">
-            @foreach (var item in Model)
+            @if (!Model.Any())
             {
-                <li class="book-item" data-book-id="@item.BookId" data-book-name="@item.BookName">
-                    <div class="book-info">
-                        <div class="d-flex align-items-center">
-                            <i class="bi bi-journal-bookmark-fill" style="padding-right:12px;"></i>
-                            <div>
-                                <span><b>@Html.DisplayFor(modelItem => item.BookName)</b></span>
-                                <div class="text-muted created-updated-time" data-created-at="@item.CreatedAt" data-updated-at="@item.UpdatedAt">
-                                    @(item.UpdatedAt.HasValue ? "Updated " : "Created ") <span></span>
+                <div class="text-center d-flex flex-column justify-content-center align-items-center" style="height: 45vh;">
+                    <i class="bi bi-journal-bookmark" style="font-size: 2rem; color: #6c757d;"></i>
+                    <h5 class="mt-3"><b>No books found with this business!</b></h5>
+                    <p class="text-muted">Add new book by clicking the "Add new book" button.</p>
+                </div>
+            }
+            else
+            {
+                foreach (var item in Model)
+                {
+                    <li class="book-item" data-book-id="@item.BookId" data-book-name="@item.BookName">
+                        <div class="book-info">
+                            <div class="d-flex align-items-center">
+                                <i class="bi bi-journal-bookmark-fill" style="padding-right: 12px;"></i>
+                                <div>
+                                    <span><b>@Html.DisplayFor(modelItem => item.BookName)</b></span>
+                                    <div class="text-muted created-updated-time" data-created-at="@item.CreatedAt" data-updated-at="@item.UpdatedAt">
+                                        @(item.UpdatedAt.HasValue ? "Updated " : "Created ") <span></span>
+                                    </div>
                                 </div>
                             </div>
                         </div>
-                    </div>
-                    <div class="d-flex align-items-center">
-                        <div class="book-actions">
-                            <!-- Use data-bs-toggle and data-bs-target for modal trigger -->
-                            <button class="btn btn-sm edit-btn editBookButton" data-bs-toggle="modal" data-bs-target="#editBookModal">
-                                <i class="fas fa-edit"></i>
-                            </button>
-                            <button class="btn btn-sm delete-btn deleteBookButton" data-bs-toggle="modal" data-bs-target="#deleteBookModal">
-                                <i class="fas fa-trash-alt"></i>
-                            </button>
+                        <div class="d-flex align-items-center">
+                            <div class="book-actions">
+                                <!-- Use data-bs-toggle and data-bs-target for modal trigger -->
+                                <button class="btn btn-sm edit-btn editBookButton" data-bs-toggle="modal" data-bs-target="#editBookModal">
+                                    <i class="fas fa-edit"></i>
+                                </button>
+                                <button class="btn btn-sm delete-btn deleteBookButton" data-bs-toggle="modal" data-bs-target="#deleteBookModal">
+                                    <i class="fas fa-trash-alt"></i>
+                                </button>
+                            </div>
+                            <div class="balance @(item.NetBalance >= 0 ? "positive" : "negative")">
+                                @(item.NetBalance >= 0 ? item.NetBalance.ToString("N2") : item.NetBalance.ToString("N2"))
+                            </div>
                         </div>
-                        <div class="balance @(item.NetBalance >= 0 ? "positive" : "negative")">
-                            @(item.NetBalance >= 0 ? item.NetBalance.ToString("N2") : item.NetBalance.ToString("N2"))
-                        </div>
-                    </div>
-                </li>
+                    </li>
+                }
             }
-    </ul>
- </div>
+        </ul>
+
+        <div class="new-books-section mt-4 border p-3 rounded">
+            <div class="d-flex align-items-center">
+                <i class=" bi bi-journals" style="font-size: 1.5rem; color: midnightblue;"></i>
+                <div class="ms-3">
+                    <h5 style="font-size: 16px;"><b>Add New Book</b></h5>
+                    <p class="text-muted small mb-0" style="font-size: small;">Click to quickly add books for</p>
+                </div>
+            </div>
+
+            <div class="mt-3 d-flex flex-wrap gap-2">
+                <a href="@Url.Action("Create", "Books")?bookName=July Expenses" class="book-name-box text-decoration-none rounded-pill">
+                    <span style="color: midnightblue;"><b>July Expenses</b></span>
+                </a>
+                <a href="@Url.Action("Create", "Books")?bookName=Monthly Ledger" class="book-name-box text-decoration-none rounded-pill">
+                    <span style="color: midnightblue;"><b>Monthly Ledger</b></span>
+                </a>
+                <a href="@Url.Action("Create", "Books")?bookName=Payable Book" class="book-name-box text-decoration-none rounded-pill">
+                    <span style="color: midnightblue;"><b>Payable Book</b></span>
+                </a>
+                <a href="@Url.Action("Create", "Books")?bookName=Home Expense" class="book-name-box text-decoration-none rounded-pill">
+                    <span style="color: midnightblue;"><b>Home Expense</b></span>
+                </a>
+            </div>
+        </div>
+
 
     <div class="modal" id="createBookModal" tabindex="-1" aria-labelledby="createBookModalLabel" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered modal-dialog-zoom modal-custom-width">
@@ -325,7 +406,8 @@
         <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.1/moment.min.js"></script>
         <script>
             $(document).ready(function () {
-                $('#createBookButton').click(function () {
+                $('#createBookButton').click(function (e) {
+                    e.preventDefault();
                     $.ajax({
                         url: '@Url.Action("Create", "Books")',
                         type: 'GET',
@@ -333,7 +415,6 @@
                             $('#createBookForm').html(response);
                             $('#createBookModal').modal('show');
 
-                            // Set focus and cursor position at the beginning of #BookName input
                             setTimeout(function () {
                                 $('#BookName').focus();
                                 $('#BookName')[0].setSelectionRange(0, 0);
@@ -345,6 +426,32 @@
                     });
                 });
 
+                // Function to handle click on book name
+                $('.book-name-box').click(function (e) {
+                    e.preventDefault(); // Prevent default action of link
+                    var bookName = $(this).text().trim();
+                    var url = '@Url.Action("Create", "Books")' + '?bookName=' + bookName;
+
+                    $.ajax({
+                        url: url,
+                        type: 'GET',
+                        success: function (response) {
+                            $('#createBookForm').html(response);
+                            $('#createBookModal').modal('show');
+
+                            // Set focus and cursor position at the end of #BookName input
+                            setTimeout(function () {
+                                $('#BookName').focus();
+                                $('#BookName')[0].setSelectionRange($('#BookName').val().length, $('#BookName').val().length);
+                            }, 0);
+                        },
+                        error: function () {
+                            alert('Error loading form');
+                        }
+                    });
+                });
+
+                // Function to handle form submission
                 function submitCreateBookForm() {
                     var form = $('#createBookForm');
                     $.ajax({
@@ -560,16 +667,18 @@
                 });
 
                 // Function to handle search filtering
-                var timeoutId = null;
-                $('#searchInput').keyup(function () {
+                    var timeoutId = null;
+
+                $('#searchInput, #sortBySelect').on('input change', function () {
                     clearTimeout(timeoutId); // Clear previous timeout
                     timeoutId = setTimeout(function () {
                         var searchString = $('#searchInput').val().trim();
+                        var sortBy = $('#sortBySelect').val(); // Assuming you have a select element for sorting
 
                         $.ajax({
                             url: '@Url.Action("Index", "Books")',
                             type: 'GET',
-                            data: { searchString: searchString },
+                            data: { searchString: searchString, sortBy: sortBy },
                             dataType: 'json', // Specify JSON data type
                             success: function (response) {
                                 // Clear previous book list content
@@ -592,41 +701,59 @@
 
                                         // Construct the HTML for the book item with relative time
                                         var bookItem = `
-                                                <li class="book-item" data-book-id="${book.bookId}" data-book-name="${book.bookName}">
-                                                    <div class="book-info">
-                                                        <div class="d-flex align-items-center">
-                                                            <i class="bi bi-journal-bookmark-fill" style="padding-right:12px;"></i>
-                                                            <div>
-                                                                <span><b>${book.bookName}</b></span>
-                                                                <div class="text-muted created-updated-time" data-created-at="${book.createdAt}" data-updated-at="${book.updatedAt}">
-                                                                    ${book.updatedAt ? 'Updated ' : 'Created '} ${relativeTime}
-                                                                </div>
+                                            <li class="book-item" data-book-id="${book.bookId}" data-book-name="${book.bookName}">
+                                                <div class="book-info">
+                                                    <div class="d-flex align-items-center">
+                                                        <i class="bi bi-journal-bookmark-fill" style="padding-right:12px;"></i>
+                                                        <div>
+                                                            <span><b>${book.bookName}</b></span>
+                                                            <div class="text-muted created-updated-time" data-created-at="${book.createdAt}" data-updated-at="${book.updatedAt}">
+                                                                ${book.updatedAt ? 'Updated ' : 'Created '} ${relativeTime}
                                                             </div>
                                                         </div>
                                                     </div>
-                                                    <div class="d-flex align-items-center">
-                                                        <div class="book-actions">
-                                                            <button class="btn btn-sm edit-btn" data-bs-toggle="modal" data-bs-target="#editBookModal">
-                                                                <i class="fas fa-edit"></i>
-                                                            </button>
-                                                            <button class="btn btn-sm delete-btn deleteBookButton" data-bs-toggle="modal" data-bs-target="#deleteBookModal">
-                                                                <i class="fas fa-trash-alt"></i>
-                                                            </button>
-                                                        </div>
-                                                        <div class="balance ${book.netBalance >= 0 ? 'positive' : 'negative'}">
-                                                            ${book.netBalance.toFixed(2)}
-                                                        </div>
+                                                </div>
+                                                <div class="d-flex align-items-center">
+                                                    <div class="book-actions">
+                                                        <button class="btn btn-sm edit-btn" data-bs-toggle="modal" data-bs-target="#editBookModal">
+                                                            <i class="fas fa-edit"></i>
+                                                        </button>
+                                                        <button class="btn btn-sm delete-btn deleteBookButton" data-bs-toggle="modal" data-bs-target="#deleteBookModal">
+                                                            <i class="fas fa-trash-alt"></i>
+                                                        </button>
                                                     </div>
-                                                </li>`;
+                                                    <div class="balance ${book.netBalance >= 0 ? 'positive' : 'negative'}">
+                                                        ${book.netBalance.toFixed(2)}
+                                                    </div>
+                                                </div>
+                                            </li>`;
 
                                         // Append the book item HTML to the book-list
                                         $('.book-list').append(bookItem);
                                     });
                                 } else {
-                                    // Display message if no books found
-                                    $('.book-list').html('<div class="text-center">No books found.</div>');
-                                }
+                                    var noBooksFoundHTML = `
+                                    <div class="text-center d-flex flex-column justify-content-center align-items-center" style="height: 45vh;">
+                                    <i class="bi bi-journal-bookmark" style="font-size: 2rem; color: #6c757d;"></i>
+                                    <h5 class="mt-3"><b>No books found with this name!</b></h5>
+                                    <p class="text-muted">Check spelling or try some other search term.</p>
+                                    <button id="clearSearchBtn" class="btn btn-outline-danger mt-3" style="background-color: #ffebee; border-color: #ffcdd2; color: #d32f2f;">
+                                        <i class="fas fa-times"></i> Clear Search
+                                    </button>
+                                    </div>`;
 
+                                    // Replace book-list content with no books found message
+                                    $('.book-list').html(noBooksFoundHTML);
+
+                                    // Handle click event for clear search button
+                                    $('#clearSearchBtn').click(function () {
+                                        $('#searchInput').val('');
+                                        $('.book-list').empty(); // Clear book list
+
+                                        // Reload the original index view
+                                        window.location.href = '@Url.Action("Index", "Books")';
+                                    });
+                                }
                             },
                             error: function () {
                                 alert('Error searching books');
@@ -634,6 +761,21 @@
                         });
                     }, 0); // Delay in milliseconds before making the AJAX call
                 });
+
+                $(document).ready(function () {
+                    $('#sortBySelect').change(function () {
+                        var selectedOption = $(this).val();
+                        var selectedText = $(this).find('option:selected').text();
+
+                        // Update the placeholder text dynamically
+                        if (selectedOption) {
+                            $(this).attr('placeholder', 'Sort by: ' + selectedText);
+                        } else {
+                            $(this).attr('placeholder', 'Sort by:');
+                        }
+                    });
+                });
+
 
                 $('.book-item').dblclick(function () {
                     var bookId = $(this).data('book-id');

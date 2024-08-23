@@ -136,6 +136,12 @@
                         <form asp-action="Create" method="post">
                             <div asp-validation-summary="ModelOnly" class="text-danger"></div>
                             <div class="mb-3 animated-input">
+                                <input asp-for="FullName" class="form-control" id="fullname" aria-describedby="fullnameHelp">
+                                <label asp-for="FullName">Full Name</label>
+                                <i class="icon bi bi-person-vcard-fill"></i>
+                                <span asp-validation-for="FullName" class="invalid-input"></span>
+                            </div>
+                            <div class="mb-3 animated-input">
                                 <input asp-for="Username" class="form-control" id="username" aria-describedby="usernameHelp">
                                 <label asp-for="Username">Username</label>
                                 <i class="icon fas fa-user"></i>

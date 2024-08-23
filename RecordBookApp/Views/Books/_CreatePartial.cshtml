@@ -2,7 +2,6 @@
 
 <div>
     <form asp-action="Create" method="post" id="createBookForm">
-        <div asp-validation-summary="ModelOnly" class="text-danger"></div>
         <div class="mb-3">
             <label asp-for="BookName" class="form-label"><h6>Enter Book Name:</h6></label>
             <input asp-for="BookName" class="form-control" placeholder="e.g. Daily Expense" />

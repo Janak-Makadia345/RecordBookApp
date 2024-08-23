@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -10,9 +11,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace RecordBookApp.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20240713135016_FullNameColumnAdd")]
+    partial class FullNameColumnAdd
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -147,23 +150,6 @@ namespace RecordBookApp.Migrations
                         });
                 });
 
-            modelBuilder.Entity("RecordBookApp.Models.Party", b =>
-                {
-                    b.Property<int>("PartyId")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("PartyId"));
-
-                    b.Property<string>("PartyType")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.HasKey("PartyId");
-
-                    b.ToTable("Party");
-                });
-
             modelBuilder.Entity("RecordBookApp.Models.Payment", b =>
                 {
                     b.Property<int>("PaymentId")
@@ -216,12 +202,6 @@ namespace RecordBookApp.Migrations
                     b.Property<string>("FileName")
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<string>("PartyName")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<int>("PartyTypePartyId")
-                        .HasColumnType("int");
-
                     b.Property<int>("PaymentId")
                         .HasColumnType("int");
 
@@ -233,8 +213,6 @@ namespace RecordBookApp.Migrations
                     b.HasIndex("BookId");
 
                     b.HasIndex("CategoryId");
-
-                    b.HasIndex("PartyTypePartyId");
 
                     b.HasIndex("PaymentId");
 
@@ -306,12 +284,6 @@ namespace RecordBookApp.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("RecordBookApp.Models.Party", "PartyType")
-                        .WithMany("Records")
-                        .HasForeignKey("PartyTypePartyId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
                     b.HasOne("RecordBookApp.Models.Payment", "Payment")
                         .WithMany("Records")
                         .HasForeignKey("PaymentId")
@@ -322,8 +294,6 @@ namespace RecordBookApp.Migrations
 
                     b.Navigation("Category");
 
-                    b.Navigation("PartyType");
-
                     b.Navigation("Payment");
                 });
 
@@ -333,11 +303,6 @@ namespace RecordBookApp.Migrations
                 });
 
             modelBuilder.Entity("RecordBookApp.Models.Category", b =>
-                {
-                    b.Navigation("Records");
-                });
-
-            modelBuilder.Entity("RecordBookApp.Models.Party", b =>
                 {
                     b.Navigation("Records");
                 });

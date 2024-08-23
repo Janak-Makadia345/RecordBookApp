@@ -10,6 +10,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
 using System.Linq;
 using System.Diagnostics;
+using RecordBookApp.Migrations;
 
 namespace RecordBookApp.Controllers
 {
@@ -26,8 +27,23 @@ namespace RecordBookApp.Controllers
 
         public async Task<IActionResult> Index()
         {
-            return View(await _context.Users.ToListAsync());
+            string userId = HttpContext.Session.GetString("UserId");
+
+            if (string.IsNullOrEmpty(userId))
+            {
+                return RedirectToAction("SignIn", "Users"); 
+            }
+
+            var user = await _context.Users.FirstOrDefaultAsync(u => u.UserId.ToString() == userId);
+
+            if (user == null)
+            {
+                return NotFound(); 
+            }
+
+            return View(new List<User> { user });
         }
+
 
         public IActionResult Create()
         {
@@ -36,7 +52,7 @@ namespace RecordBookApp.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Create([Bind("UserId,Username,Email,Password,ConfirmPassword")] User user)
+        public async Task<IActionResult> Create([Bind("UserId,FullName,Username,Email,Password,ConfirmPassword")] User user)
         {
             if (_context.Users.Any(u => u.Email == user.Email))
             {
@@ -256,6 +272,7 @@ namespace RecordBookApp.Controllers
             if (VerifyPassword(model.Password, user.Password))
             {
                 HttpContext.Session.SetString("UserId", user.UserId.ToString());
+                HttpContext.Session.SetString("FullName", user.FullName);
                 return RedirectToAction("Index", "Books");
             }
             else
@@ -288,29 +305,52 @@ namespace RecordBookApp.Controllers
             {
                 return NotFound();
             }
-            return View(user);
+
+            // Only pass relevant information to the viewS
+            var editViewModel = new User
+            {
+                UserId = user.UserId,
+                Username = user.Username,
+                FullName = user.FullName,
+                Email = user.Email
+            };
+
+            return View(editViewModel);
         }
 
         // POST: Users/Edit/5
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Edit(int id, [Bind("UserId,Username,Email,Password")] User user)
+        public async Task<IActionResult> Edit(int id, [Bind("UserId,Username,FullName,Email,Password,ConfirmPassword")] User editUserViewModel)
         {
-            if (id != user.UserId)
+            if (id != editUserViewModel.UserId)
             {
                 return NotFound();
             }
 
-            
+            if (ModelState.IsValid)
+            {
                 try
                 {
-                    user.Password = HashPassword(user.Password); // Re-hash the password before saving
+                    var user = await _context.Users.FindAsync(id);
+                    if (user == null)
+                    {
+                        return NotFound();
+                    }
+
+                    // Update only the password fields
+                    if (!string.IsNullOrEmpty(editUserViewModel.Password))
+                    {
+                        user.Password = editUserViewModel.Password;
+                        user.ConfirmPassword = editUserViewModel.ConfirmPassword;
+                    }
+
                     _context.Update(user);
                     await _context.SaveChangesAsync();
                 }
                 catch (DbUpdateConcurrencyException)
                 {
-                    if (!UserExists(user.UserId))
+                    if (!UserExists(editUserViewModel.UserId))
                     {
                         return NotFound();
                     }
@@ -320,42 +360,62 @@ namespace RecordBookApp.Controllers
                     }
                 }
                 return RedirectToAction(nameof(Index));
+            }
+            return View(editUserViewModel);
         }
 
         // GET: Users/Delete/5
-        public async Task<IActionResult> Delete(int? id)
+        public IActionResult Delete()
         {
-            if (id == null)
+            var userId = HttpContext.Session.GetString("UserId");
+            if (string.IsNullOrEmpty(userId))
             {
                 return NotFound();
             }
 
-            var user = await _context.Users.FirstOrDefaultAsync(m => m.UserId == id);
+            return PartialView("_DeleteUserPartial");
+        }
+
+        // POST: Users/Delete
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> DeleteConfirmed(string password)
+        {
+            var userId = HttpContext.Session.GetString("UserId");
+            if (string.IsNullOrEmpty(userId))
+            {
+                return Json(new { success = false, message = "User not found." });
+            }
+
+            var user = await _context.Users.FirstOrDefaultAsync(u => u.UserId.ToString() == userId);
             if (user == null)
             {
-                return NotFound();
+                return Json(new { success = false, message = "User not found." });
             }
 
-            return View(user);
-        }
-
-        // POST: Users/Delete/5
-        [HttpPost, ActionName("Delete")]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> DeleteConfirmed(int id)
-        {
-            var user = await _context.Users.FindAsync(id);
-            if (user != null)
+            if (!VerifyPassword(password, user.Password))
             {
-                _context.Users.Remove(user);
-                await _context.SaveChangesAsync();
+                return Json(new { success = false, message = "Incorrect password." });
             }
-            return RedirectToAction(nameof(Index));
+
+            _context.Users.Remove(user);
+            await _context.SaveChangesAsync();
+
+            // Clear session or any other user-specific data here if needed
+            HttpContext.Session.Clear();
+
+            return Json(new { success = true });
         }
+
 
         private bool UserExists(int id)
         {
             return _context.Users.Any(e => e.UserId == id);
+        }
+        public IActionResult Logout()
+        {
+            HttpContext.Session.Clear(); // Clear the session
+            return RedirectToAction("SignIn", "Users"); // Redirect to login page
         }
     }
 }

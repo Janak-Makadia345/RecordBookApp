@@ -27,9 +27,11 @@ namespace RecordBookApp.Controllers
 
         // GET: Books
         [HttpGet("")]
-        public async Task<IActionResult> Index(string searchString)
+        public async Task<IActionResult> Index(string searchString, string sortBy)
         {
             var userId = HttpContext.Session.GetString("UserId");
+            var FullName = HttpContext.Session.GetString("FullName");
+
             if (userId == null)
             {
                 return RedirectToAction("SignIn", "Users");
@@ -76,18 +78,49 @@ namespace RecordBookApp.Controllers
                 });
             }
 
+            // Apply sorting based on sortBy parameter
+            switch (sortBy)
+            {
+                case "Name":
+                    bookViewModels = bookViewModels.OrderBy(b => b.BookName).ToList();
+                    break;
+                case "NetBalance":
+                    bookViewModels = bookViewModels.OrderByDescending(b => b.NetBalance).ToList();
+                    break;
+                case "CreatedAt":
+                    bookViewModels = bookViewModels.OrderByDescending(b => b.CreatedAt).ToList();
+                    break;
+                case "UpdatedAt":
+                    bookViewModels = bookViewModels.OrderByDescending(b => b.UpdatedAt).ToList();
+                    break;
+                case "NetBalanceAsc":
+                    bookViewModels = bookViewModels.OrderBy(b => b.NetBalance).ToList();
+                    break;
+                default:
+                    bookViewModels = bookViewModels.OrderBy(b => b.BookName).ToList();
+                    break;
+            }
+
             if (Request.Headers["X-Requested-With"] == "XMLHttpRequest")
             {
                 return Json(bookViewModels);
             }
 
+            ViewData["FullName"] = FullName; // Pass FullName to the view data
             return View(bookViewModels);
         }
 
         // GET: Books/Create
         [HttpGet("Create")]
-        public IActionResult Create()
+        public IActionResult Create(string ? bookName)
         {
+            if(bookName != null) {
+                var bookView = new BookView
+                {
+                    BookName = bookName
+                };
+                return PartialView("_CreatePartial", bookView);
+            }
             return PartialView("_CreatePartial");
         }
 
