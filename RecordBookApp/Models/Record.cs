@@ -10,9 +10,6 @@ namespace RecordBookApp.Models
         public DateTime Time { get; set; }
         [Required]
         public decimal Amount { get; set; }
-        public string? PartyName { get; set; }
-        public Party PartyType { get; set; }
-        [ForeignKey("PartyId")]
         public int BookId { get; set; }
         [ForeignKey("BookId")]
         public Book Book { get; set; }
